@@ -45,7 +45,7 @@ static const uint8_t CONVERSION_TIME_OSR_2048 = 5;
 static const uint8_t CONVERSION_TIME_OSR_4096 = 9;
 static const uint8_t CONVERSION_TIME_OSR_8192 = 17;
 
-enum OSR_Resolution {
+enum MS5637Resolution {
   OSR_256 = 0,
   OSR_512,
   OSR_1024,
@@ -58,7 +58,7 @@ class MS5637Component : public PollingComponent, public i2c::I2CDevice, public s
  public:
    void set_temperature_sensor(sensor::Sensor *temperature) { temperature_sensor_ = temperature; }
    void set_pressure_sensor(sensor::Sensor *pressure) { pressure_sensor_ = pressure; }
-   void set_resolution(OSR_Resolution resolution) { resolution_osr_ = resolution; }
+   void set_resolution(MS5637Resolution resolution) { resolution_osr_ = resolution; }
 
    void setup() override;
    void dump_config() override;
@@ -77,10 +77,10 @@ class MS5637Component : public PollingComponent, public i2c::I2CDevice, public s
 
    uint8_t conversion_time_[6] = {
      CONVERSION_TIME_OSR_256,  CONVERSION_TIME_OSR_512,
-      CONVERSION_TIME_OSR_1024, CONVERSION_TIME_OSR_2048,
-      CONVERSION_TIME_OSR_4096, CONVERSION_TIME_OSR_8192 };
+     CONVERSION_TIME_OSR_1024, CONVERSION_TIME_OSR_2048,
+     CONVERSION_TIME_OSR_4096, CONVERSION_TIME_OSR_8192 };
 
-   uint8_t resolution_osr_;
+   MS5637Resolution resolution_osr_;
    uint8_t conversion_time_osr_;
    uint32_t adc_temperature_;
    uint32_t adc_pressure_;

@@ -13,15 +13,15 @@ from esphome.const import (
     UNIT_CELSIUS,
 )
 
-from . import OSR_Resolution, MS5637Component
+from . import MS5637Resolution, MS5637Component
 
-MS5637_RESOLUTION = {
-    "OSR_256"  : OSR_Resolution.OSR_256,
-    "OSR_512"  : OSR_Resolution.OSR_512,
-    "OSR_1024" : OSR_Resolution.OSR_1024,
-    "OSR_2048" : OSR_Resolution.OSR_2048,
-    "OSR_4096" : OSR_Resolution.OSR_4096,
-    "OSR_8192" : OSR_Resolution.OSR_8192,
+RESOLUTION_OPTIONS = {
+    "OSR_256"  : MS5637Resolution.OSR_256,
+    "OSR_512"  : MS5637Resolution.OSR_512,
+    "OSR_1024" : MS5637Resolution.OSR_1024,
+    "OSR_2048" : MS5637Resolution.OSR_2048,
+    "OSR_4096" : MS5637Resolution.OSR_4096,
+    "OSR_8192" : MS5637Resolution.OSR_8192,
 }
 
 CONFIG_SCHEMA = (
@@ -29,7 +29,7 @@ CONFIG_SCHEMA = (
         {
             cv.GenerateID(): cv.declare_id(MS5637Component),
             cv.Optional(CONF_RESOLUTION, default="OSR_2048"): cv.enum(
-                MS5637_RESOLUTION, upper=False
+                RESOLUTION_OPTIONS, upper=False
             ),
             cv.Required(CONF_PRESSURE): sensor.sensor_schema(
                 unit_of_measurement=UNIT_HECTOPASCAL,
