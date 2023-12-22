@@ -2,7 +2,7 @@ The MS5637 Arduino library was originally written by TEConnectivity with MIT lic
 This library was updated by Nathan Seidle @ SparkFun Electronics, 2018.
 
 The MS5637 Sparkfun Arduino library was adapted and modified
-so it functions uder the ESPHome component framework by @mrtoy-me, 2023
+so it functions under the ESPHome component framework by @mrtoy-me, 2023
 
 MIT License
 Copyright (c) 2016 TE Connectivity
