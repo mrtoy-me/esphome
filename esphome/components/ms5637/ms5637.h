@@ -2,9 +2,9 @@
   The MS5637 library originally written by TEConnectivity with MIT license.
   This library was updated by Nathan Seidle @ SparkFun Electronics, 2018.
 
-  The MS5637 Sparkfun Arduino library has been adapted and modified 
-  so it functions under the ESPHome component framework by @mrtoy-me, 2023 
-  
+  The MS5637 Sparkfun Arduino library has been adapted and modified
+  so it functions under the ESPHome component framework by @mrtoy-me, 2023
+
   MIT License
   Copyright (c) 2016 TE Connectivity
 
@@ -72,7 +72,7 @@ class MS5637Component : public PollingComponent, public i2c::I2CDevice, public s
    void do_pressure_conversion();
    void read_pressure_and_publish();
    bool calculate_temperature_and_pressure();
-	
+
    uint16_t eeprom_coeff_[8];
 
    uint8_t conversion_time_[6] = {
@@ -84,13 +84,13 @@ class MS5637Component : public PollingComponent, public i2c::I2CDevice, public s
    uint8_t conversion_time_osr_;
    uint32_t adc_temperature_;
    uint32_t adc_pressure_;
-	 float temperature_reading_;
+   float temperature_reading_;
    float pressure_reading_;
 
-   // sensors for humidity and temperature 
+   // sensors for humidity and temperature
    sensor::Sensor *temperature_sensor_{nullptr};
-   sensor::Sensor *pressure_sensor_{nullptr}; 
-    
+   sensor::Sensor *pressure_sensor_{nullptr};
+
    enum ErrorCode {
      NONE = 0,
      COMMUNICATION_FAILED,
