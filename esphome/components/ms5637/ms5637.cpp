@@ -110,8 +110,8 @@ void MS5637Component::dump_config() {
       ESP_LOGI(TAG, "  Setup successful");
       break;
   }
-  ESP_LOGD(TAG,"  Resolution: OSR %i",(256*(uint8_t)(1<<this->resolution_osr_)));
-  ESP_LOGD(TAG,"  ADC conversion: %ims",this->conversion_time_osr_);
+  ESP_LOGCONFIG(TAG,"  Resolution: OSR %i",(256*(uint8_t)(1<<this->resolution_osr_)));
+  ESP_LOGV(TAG,"  ADC conversion: %ims",this->conversion_time_osr_);
   LOG_I2C_DEVICE(this);
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Temperature", this->temperature_sensor_);
@@ -134,7 +134,7 @@ void MS5637Component::start_conversions() {
   cmd = this->resolution_osr_ * 2;
   cmd |= MS5637_START_TEMPERATURE_ADC_CONVERSION;
 
-  if (this->write(&cmd,1) != i2c::ERROR_OK) {
+  if (this->write(&cmd, 1) != i2c::ERROR_OK) {
     ESP_LOGW(TAG, "Error writing conversion command(temperature)");
     this->status_set_warning();
     return;
@@ -159,7 +159,7 @@ void MS5637Component::do_pressure_conversion() {
   cmd = this->resolution_osr_ * 2;
   cmd |= MS5637_START_PRESSURE_ADC_CONVERSION;
 
-  if (this->write(&cmd,1) != i2c::ERROR_OK) {
+  if (this->write(&cmd, 1) != i2c::ERROR_OK) {
     ESP_LOGW(TAG, "Error writing conversion command(pressure)");
     this->status_set_warning();
     return;
