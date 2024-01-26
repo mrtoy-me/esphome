@@ -23,7 +23,7 @@ CODEOWNERS = ["@latonita"]
 DEPENDENCIES = ["i2c"]
 
 UNIT_COUNTS = "#"
-ICON_GAIN = "mdi:multiplication"
+ICON_MULTIPLICATION = "mdi:multiplication"
 ICON_BRIGHTNESS_7 = "mdi:brightness-7"
 
 CONF_ACTUAL_INTEGRATION_TIME = "actual_integration_time"
@@ -67,7 +67,7 @@ CONFIG_SCHEMA = cv.All(
         {
             cv.GenerateID(): cv.declare_id(VEML7700Component),
             cv.Optional(CONF_AUTO_MODE, default=True): cv.boolean,
-            cv.Optional(CONF_GAIN, default="1X"): cv.enum(GAINS, upper=True),
+            cv.Optional(CONF_GAIN, default="1/8X"): cv.enum(GAINS, upper=True),
             cv.Optional(
                 CONF_INTEGRATION_TIME, default="100ms"
             ): validate_integration_time,
@@ -111,7 +111,7 @@ CONFIG_SCHEMA = cv.All(
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
             cv.Optional(CONF_ACTUAL_GAIN): sensor.sensor_schema(
-                icon=ICON_GAIN,
+                icon=ICON_MULTIPLICATION,
                 accuracy_decimals=3,
                 state_class=STATE_CLASS_MEASUREMENT,
             ),
@@ -125,15 +125,6 @@ CONFIG_SCHEMA = cv.All(
     )
     .extend(cv.polling_component_schema("60s"))
     .extend(i2c.i2c_device_schema(0x10)),
-    cv.has_at_least_one_key(
-        CONF_AMBIENT_LIGHT,
-        CONF_FULL_SPECTRUM,
-        CONF_INFRARED,
-        CONF_AMBIENT_LIGHT_COUNTS,
-        CONF_FULL_SPECTRUM_COUNTS,
-        CONF_ACTUAL_GAIN,
-        CONF_ACTUAL_INTEGRATION_TIME,
-    ),
 )
 
 
@@ -174,4 +165,4 @@ async def to_code(config):
     cg.add(var.set_enable_lux_compensation(config[CONF_LUX_COMPENSATION]))
     cg.add(var.set_gain(config[CONF_GAIN]))
     cg.add(var.set_integration_time(config[CONF_INTEGRATION_TIME]))
-    cg.add(var.set_attenuation_factor(config[CONF_GLASS_ATTENUATION_FACTOR]))
+    cg.add(var.set_glass_attenuation_factor(config[CONF_GLASS_ATTENUATION_FACTOR]))
