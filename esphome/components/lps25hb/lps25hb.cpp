@@ -91,7 +91,8 @@ void LPS25HBComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up LPS25HB...");
 
   uint8_t device_id = 0x00;
-  if (this->read_register((LPS25HB_REG_WHO_AM_I | (1 << 7)), &device_id, 1, false) != i2c::ERROR_OK) {
+  //if (this->read_register((LPS25HB_REG_WHO_AM_I | (1 << 7)), &device_id, 1, false) != i2c::ERROR_OK) {
+   if (this->read_register((LPS25HB_REG_WHO_AM_I), &device_id, 1, false) != i2c::ERROR_OK) {
     this->error_code_ = READ_REGISTER_FAILED;
     this->mark_failed();
     return;
@@ -105,7 +106,8 @@ void LPS25HBComponent::setup() {
   uint8_t settings[5];
 
 	settings[0] = LPS25HB_RES_CONF_DEFAULT; // configure resolution to default
-	if (this->write_register((LPS25HB_REG_RES_CONF | (1 << 7)), settings, 1) != i2c::ERROR_OK) {
+	//if (this->write_register((LPS25HB_REG_RES_CONF | (1 << 7)), settings, 1) != i2c::ERROR_OK) {
+  if (this->write_register((LPS25HB_REG_RES_CONF), settings, 1) != i2c::ERROR_OK) {
     this->error_code_ = WRITE_REGISTER_FAILED;
     this->mark_failed();
     return;
@@ -126,7 +128,7 @@ void LPS25HBComponent::setup() {
 
 void LPS25HBComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "LPS25HB:");
-
+  
   switch (this->error_code_) {
     case READ_REGISTER_FAILED:
       ESP_LOGE(TAG, "  Reading register failed");
@@ -141,10 +143,10 @@ void LPS25HBComponent::dump_config() {
       ESP_LOGE(TAG, "  Writing Control Register 1 failed");
       break;
     case NONE:
-      ESP_LOGI(TAG, "  Setup successful");
+      ESP_LOGD(TAG, "  Setup successful");
       break;
   }
-  
+  ESP_LOGD(TAG, "  Pressure Correction: %.2fhPa", this->pressure_correction_);
   LOG_I2C_DEVICE(this);
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Temperature", this->temperature_sensor_);
@@ -154,17 +156,26 @@ void LPS25HBComponent::dump_config() {
 void LPS25HBComponent::update() {
   this->running_update_ = true;
   this->status_clear_warning();
-  if (this->temperature_sensor_!= nullptr) {
-    ESP_LOGD(TAG, "'%s': new reading=%.2f°C", this->temperature_sensor_->get_name().c_str(), temperature_reading_);
-    this->temperature_sensor_->publish_state(temperature_reading_);
+  if (new_temperature_reading_ready()) {
+    read_temperature();
+   
+    if (this->temperature_sensor_!= nullptr) {
+      ESP_LOGD(TAG, "'%s': new reading=%.2f°C", this->temperature_sensor_->get_name().c_str(), temperature_reading_);
+      this->temperature_sensor_->publish_state(temperature_reading_);
+    }
   }
-  if (this->pressure_sensor_ != nullptr) {
-    ESP_LOGD(TAG, "'%s': new reading=%.1fhPa", this->pressure_sensor_->get_name().c_str(), pressure_reading_);
-    this->pressure_sensor_->publish_state(pressure_reading_);
+
+  if (new_pressure_reading_ready()) {
+    read_pressure();
+
+    if (this->pressure_sensor_ != nullptr) {
+      ESP_LOGD(TAG, "'%s': new reading=%.2fhPa", this->pressure_sensor_->get_name().c_str(), pressure_reading_);
+      this->pressure_sensor_->publish_state(pressure_reading_);
+    }
   }
   this->running_update_ = false;
 }
-
+/*
 void LPS25HBComponent::loop() {
   // only run loop if not updating and not failled
   if (this->running_update_ || this->is_failed()) {
@@ -173,22 +184,27 @@ void LPS25HBComponent::loop() {
   
   if (new_temperature_reading_ready()) {
     read_temperature();
-  }
+    //ESP_LOGD(TAG, "got temp");
+  } 
 
   if (new_pressure_reading_ready()) {
     read_pressure();
+    //ESP_LOGD(TAG, "got pres");
   }
 }
+*/
 
 float LPS25HBComponent::get_setup_priority() const { return setup_priority::DATA; }
 
 uint8_t LPS25HBComponent::get_status() {
 	uint8_t status = 0x00;
-  if (this->read_register((LPS25HB_REG_STATUS_REG | (1 << 7)), &status, 1, false) != i2c::ERROR_OK) {
-    this->error_code_ = READ_REGISTER_FAILED;
-    this->mark_failed();
-    return status;
+  //if (this->read_register((LPS25HB_REG_STATUS_REG | (1 << 7)), &status, 1, false) != i2c::ERROR_OK) {
+  if (this->read_register((LPS25HB_REG_STATUS_REG), &status, 1, false) != i2c::ERROR_OK) {
+    ESP_LOGW(TAG, "Error reading status");
+    this->status_set_warning();
+    return 0;
   }
+  return status;
 }
 
 bool LPS25HBComponent::new_temperature_reading_ready() {
@@ -232,8 +248,36 @@ void LPS25HBComponent::read_pressure() {
 	if (buffer[2] & 0x80) {
 		raw_pressure |= 0xFF000000;  // for proper 2's complement behaviour, conditionally set the highest byte
 	} 
-	this->pressure_reading_ = (float)(raw_pressure / 4096.0);
+	this->pressure_reading_ = (float)(raw_pressure / 4096.0) + this->pressure_correction_;
 }
+/*
+bool LPS25HBComponent::set_pressure_offset(int16_t offset_value) {
+  uint8_t buffer[2];
+
+  buffer[1] = (uint8_t)((uint16_t)offset_value / 256U);
+  buffer[0] = (uint8_t)((uint16_t)offset_value - (buffer[1] * 256U));
+  if (this->write_register((LPS25HB_REG_RPDS_L | (1 << 7)), buffer, 2) != i2c::ERROR_OK) {
+    ESP_LOGW(TAG, "Error setting pressure offset");
+    this->status_set_warning();
+    return false;
+  }
+  return true;
+}
+
+bool LPS25HBComponent::get_pressure_offset(int16_t *offset_value) {
+  uint8_t buffer[2];
+  if (this->read_register((LPS25HB_REG_RPDS_L | (1 << 7)), buffer, 2, false) != i2c::ERROR_OK ) {
+    ESP_LOGW(TAG, "Error reading pressure offset");
+    this->status_set_warning();
+    *offset_value = 0;
+    return false;
+  }
+  
+  *offset_value = (int16_t)buffer[1];
+  *offset_value = (*offset_value * 256) + (int16_t)buffer[0];
+  return true;
+}
+*/
 
 } // namespace lps25hb
 } // namespace esphome

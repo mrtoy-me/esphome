@@ -20,11 +20,12 @@ class LPS25HBComponent : public PollingComponent, public i2c::I2CDevice, public 
  public:
    void set_temperature_sensor(sensor::Sensor *temperature) { temperature_sensor_ = temperature; }
    void set_pressure_sensor(sensor::Sensor *pressure) { pressure_sensor_ = pressure; }
+   void set_pressure_correction(float correction) { pressure_correction_ = correction; }
 
    void setup() override;
    void dump_config() override;
    void update() override;
-   void loop() override;
+   //void loop() override;
    float get_setup_priority() const override;
 
  protected:
@@ -64,7 +65,8 @@ class LPS25HBComponent : public PollingComponent, public i2c::I2CDevice, public 
 
 	   // Reserved 0x32-38
 
-	   LPS25HB_REG_RPDS_L = 0x39
+	   LPS25HB_REG_RPDS_L = 0x39,
+     LPS25HB_REG_RPDS_H,
    };
 
    enum ErrorCode {
@@ -80,10 +82,13 @@ class LPS25HBComponent : public PollingComponent, public i2c::I2CDevice, public 
    bool new_pressure_reading_ready();
    void read_temperature();
    void read_pressure();
+   //bool set_pressure_offset(int16_t offset);
+   //bool get_pressure_offset(int16_t *offset);
 
    bool running_update_{false};
    float temperature_reading_{0};
    float pressure_reading_{0};
+   float pressure_correction_{0.0};
 
    // sensors for humidity and temperature
    sensor::Sensor *temperature_sensor_{nullptr};
