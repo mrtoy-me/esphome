@@ -14,6 +14,7 @@ from esphome.const import (
     STATE_CLASS_MEASUREMENT,
     STATE_CLASS_TOTAL_INCREASING,
     UNIT_KILOWATT_HOURS,
+    UNIT_MINUTE,
     UNIT_WATT,
     UNIT_PERCENT,
     CONF_TIME_ID,
@@ -40,6 +41,7 @@ CONF_TIME_STAMP = "timestamp"
 CONF_PULSES = "pulses"
 CONF_COST = "cost"
 CONF_DAILY_PULSES = "daily_pulses"
+CONF_UPTIME = "uptime"
 
 def _validate(config):
     if CONF_DAILY_ENERGY in config and CONF_TIME_ID not in config:
@@ -114,6 +116,11 @@ CONFIG_SCHEMA = cv.All(
             cv.Optional(CONF_PULSES): sensor.sensor_schema(),
             cv.Optional(CONF_DAILY_PULSES): sensor.sensor_schema(),
             cv.Optional(CONF_TIME_STAMP): sensor.sensor_schema(),
+            cv.optional(CONF_UPTIME): sensor.sensor_schema(
+                unit_of_measurement=UNIT_MINUTE,
+                accuracy_decimals=3,
+                state_class=STATE_CLASS_MEASUREMENT,
+            ),
             cv.Optional(CONF_COST): sensor.sensor_schema(
                 accuracy_decimals=11
             ),
@@ -175,6 +182,10 @@ async def to_code(config):
         sens = await sensor.new_sensor(config[CONF_TIME_STAMP])
         cg.add(var.set_timestamp(sens))
 
+    if CONF_UPTIME in config:
+        sens = await sensor.new_sensor(config[CONF_UPTIME])
+        cg.add(var.set_uptime(sens))
+
     if CONF_COST in config:
         sens = await sensor.new_sensor(config[CONF_COST])
         cg.add(var.set_cost_sensor(sens))
@@ -191,7 +202,6 @@ async def to_code(config):
     if CONF_BATTERY_LEVEL in config:
         sens = await sensor.new_sensor(config[CONF_BATTERY_LEVEL])
         cg.add(var.set_battery(sens))
-
 
     if CONF_COST_PER_KWH in config:
         cg.add(var.set_energy_cost(config[CONF_COST_PER_KWH]))

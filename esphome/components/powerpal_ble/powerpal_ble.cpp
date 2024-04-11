@@ -53,8 +53,14 @@ void Powerpal::parse_measurement_(const uint8_t *data, uint16_t length) {
     unix_time += (data[2] << 16);
     unix_time += (data[3] << 24);
     long int new_time = unix_time;
-    //
-        uint16_t pulses_within_interval = data[4];
+
+    struct tm *date_local = ::localtime(&unix_time);
+    if (date_local->tm_year > this->current_year_) {
+      this->start_unix_time_ = unix_time;
+      this->current_year_ = date_local->tm_year;
+    }
+    
+    uint16_t pulses_within_interval = data[4];
     pulses_within_interval += data[5] << 8;
     
     // float total_kwh_within_interval = pulses_within_interval / this->pulses_per_kwh_;
@@ -65,7 +71,6 @@ void Powerpal::parse_measurement_(const uint8_t *data, uint16_t length) {
 
     if (this->power_sensor_ != nullptr) {
       this->power_sensor_->publish_state(avg_watts_within_interval);
-      //
     }
 
     if (this->cost_sensor_ != nullptr) {
@@ -74,17 +79,25 @@ void Powerpal::parse_measurement_(const uint8_t *data, uint16_t length) {
     }
 
     if (this->pulses_sensor_ != nullptr) {
-       this->pulses_sensor_->publish_state(pulses_within_interval);
+      this->pulses_sensor_->publish_state(pulses_within_interval);
     }
 
     if (this->watt_hours_sensor_ != nullptr) {
       int mywatt_hrs = (uint32_t)roundf(pulses_within_interval * (this->pulses_per_kwh_ / kw_to_w_conversion));
-       this->watt_hours_sensor_->publish_state(mywatt_hrs);
+      this->watt_hours_sensor_->publish_state(mywatt_hrs);
     }
-     if (this->timestamp_sensor_ != nullptr) {
-      //int mywatt_hrs = (uint32_t)roundf(pulses_within_interval * (this->pulses_per_kwh_ / kw_to_w_conversion));
-       this->timestamp_sensor_->publish_state(new_time);
+
+    if (this->timestamp_sensor_ != nullptr) {
+      this->timestamp_sensor_->publish_state(new_time);
     }
+
+    if (this->uptime_sensor_ != nullptr) {
+      int32_t seconds_since_start = (int32_t)(unix_time - this->start_unix_time_);
+      float uptime_minutes = (float)(seconds_since_start) / 60.0; 
+      ESP_LOGI(TAG, "Uptime minutes since restart or start of year: %.3f min", uptime_minutes);
+      this->uptime_sensor_->publish_state(uptime_minutes);
+    }
+
     if (this->energy_sensor_ != nullptr) {
       this->total_pulses_ += pulses_within_interval;
       float energy = this->total_pulses_ / this->pulses_per_kwh_;
@@ -98,7 +111,7 @@ void Powerpal::parse_measurement_(const uint8_t *data, uint16_t length) {
       this->daily_energy_sensor_->publish_state(energy);
       
       if (this->daily_pulses_sensor_ != nullptr) {
-      this->daily_pulses_sensor_->publish_state(daily_pulses_);
+        this->daily_pulses_sensor_->publish_state(daily_pulses_);
       }
       // if esphome device has a valid time component set up, use that (preferred)
       // else, use the powerpal measurement timestamps

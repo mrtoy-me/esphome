@@ -72,6 +72,7 @@ class Powerpal : public esphome::ble_client::BLEClientNode, public Component {
   void set_pulses_sensor(sensor::Sensor *pulses_sensor) { pulses_sensor_ = pulses_sensor;}
   void set_watt_hours(sensor::Sensor *watt_hours_sensor) {watt_hours_sensor_ = watt_hours_sensor;}
   void set_timestamp(sensor::Sensor *timestamp_sensor) { timestamp_sensor_ = timestamp_sensor;}
+  void set_uptime(sensor::Sensor *uptime_sensor) { uptime_sensor_ = uptime_sensor;}
   void set_daily_pulses_sensor(sensor::Sensor *daily_pulses_sensor) { daily_pulses_sensor_ = daily_pulses_sensor;}
 #ifdef USE_TIME
   void set_time(time::RealTimeClock *time) { time_ = time; }
@@ -110,12 +111,17 @@ class Powerpal : public esphome::ble_client::BLEClientNode, public Component {
   sensor::Sensor *daily_pulses_sensor_{nullptr};
   sensor::Sensor *watt_hours_sensor_{nullptr};
   sensor::Sensor *timestamp_sensor_{nullptr};
- 
+  sensor::Sensor *uptime_sensor_{nullptr};
 
 #ifdef USE_TIME
   optional<time::RealTimeClock *> time_{};
 #endif
+
+  time_t start_unix_time_;
+  uint16_t current_year_{0};
+  
   uint16_t day_of_last_measurement_{0};
+  
 
   uint8_t pairing_code_[4];
   uint8_t reading_batch_size_[4] = {0x01, 0x00, 0x00, 0x00};
