@@ -24,8 +24,10 @@ class SHT3XDComponent : public PollingComponent, public sensirion_common::Sensir
  protected:
   enum ErrorCode {
     NONE = 0,
-    WRITE_BREAK_FAILED,
+    WRITE_CLEAR_FAILED,
     WRITE_SOFT_RESET_FAILED,
+    READ_SERIAL_STRETCHED_FAILED,
+    READ_SERIAL_FAILED,
     READ_STATUS_FAILED,
     WRITE_HEATER_MODE_FAILED,
     READ_HEATER_STATUS_FAILED,
