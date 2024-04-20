@@ -27,43 +27,12 @@ static const uint16_t SHT3XD_COMMAND_FETCH_DATA = 0xE000;
 
 void SHT3XDComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up SHT3xD...");
-  // working ok idf @800KHz i2c - remove other github libraries do not use except for sensiron example 
-  /*
-  if (!this->write_command(SHT3XD_COMMAND_BREAK)) {
-    this->error_code_ = WRITE_BREAK_FAILED;
-    this->status_has_warning();
-  } 
-  delay(2);
   
-  if (!this->write_command(SHT3XD_COMMAND_SOFT_RESET)) {
-    this->error_code_ = WRITE_SOFT_RESET_FAILED;
-    this->status_has_warning();
-  }
-  delay(10);
-*/
-  // working ok idf @800KHz i2c - remove as used for testing - usually see 0x0000 except when disconnect power on/off the 0x8020
-  //if (!this->get_register(SHT3XD_COMMAND_READ_STATUS, &this->setup_status_, 1, 2)) {
-  //    this->error_code_ = READ_STATUS_FAILED;
-  //    this->status_has_warning();
-  //    return;
-  //}
-
- // if (!this->write_command(SHT3XD_COMMAND_CLEAR_STATUS)) {
-  //  this->status_has_warning();
-  //}
-  //delay(2);
-  // working ok idf @800KHz i2c - remove as used for testing 0x0000 after
-  //if (!this->get_register(SHT3XD_COMMAND_READ_STATUS, &this->status_after_clear_, 1, 2)) {
-  //    this->error_code_ = READ_STATUS_FAILED;
-  //    this->status_has_warning();
-  //    return;
-  //}
-  // following works with delay selected 2ms because some write commands error with 1ms
   uint16_t raw_serial_number[2]{0,0};
   if (!this->get_register(SHT3XD_COMMAND_READ_SERIAL_NUMBER_CLOCK_STRETCHING, raw_serial_number, 2, 2)) {
-    this->error_code_ = READ_SERIAL_STRETCHED_FAILED;
+    this->read_serial_error_code_ = READ_SERIAL_STRETCHED_FAILED;
     if (!this->get_register(SHT3XD_COMMAND_READ_SERIAL_NUMBER, raw_serial_number, 2, 2)) {
-      this->error_code_ = READ_SERIAL_FAILED;
+      this->read_serial_error_code_ = READ_SERIAL_FAILED;
       this->status_has_warning();
       return;
     }
@@ -72,66 +41,64 @@ void SHT3XDComponent::setup() {
   this->serial_number_ = (uint32_t(raw_serial_number[0]) << 16) | uint32_t(raw_serial_number[1]);
 
   if (!this->write_command(SHT3XD_COMMAND_CLEAR_STATUS)) {
-    this->error_code_ = WRITE_CLEAR_FAILED;
-    this->status_has_warning();
+    this->heater_setup_error_code_ = WRITE_CLEAR_FAILED;
+    this->mark_failed();
   }
   delay(2);
 
   if (!this->write_command(heater_enabled_ ? SHT3XD_COMMAND_HEATER_ENABLE : SHT3XD_COMMAND_HEATER_DISABLE)) {
-    this->error_code_ = WRITE_HEATER_MODE_FAILED;
+    this->heater_setup_error_code_ = WRITE_HEATER_MODE_FAILED;
     this->mark_failed();
     return;
   }
   delay(2);
-  if (!this->get_register(SHT3XD_COMMAND_READ_STATUS, &this->status_after_heater_mode_, 1, 2)) {
-      this->error_code_ = READ_HEATER_STATUS_FAILED;
-      this->status_has_warning();
+  if (!this->get_register(SHT3XD_COMMAND_READ_STATUS, &this->status_register_, 1, 2)) {
+      this->heater_setup_error_code_ = READ_STATUS_FAILED;
+      this->mark_failed();
       return;
   }
 }
 
 void SHT3XDComponent::dump_config() {
   ESP_LOGCONFIG(TAG, "SHT3xD:");
-  switch (this->error_code_) {
-    case WRITE_CLEAR_FAILED:
-      ESP_LOGW(TAG, "  write clear failed");
-      break;
-    case WRITE_SOFT_RESET_FAILED:
-      ESP_LOGW(TAG, "  write soft reset failed");
-      break;
-    case READ_STATUS_FAILED:
-      ESP_LOGW(TAG, "  read status failed");
-      break;
+  switch (this->read_serial_error_code_) {
     case READ_SERIAL_STRETCHED_FAILED:
-      ESP_LOGW(TAG, "  read serial stretched failed");
+      ESP_LOGW(TAG, "  Failed to read serial#(stretched)-trying alternate");
       break;
     case READ_SERIAL_FAILED:
-      ESP_LOGW(TAG, "  READ_SERIAL_FAILED");
+      ESP_LOGW(TAG, "  Failed to read serial#");
       break; 
-    case WRITE_HEATER_MODE_FAILED:
-      ESP_LOGW(TAG, "  write heater mode failed");
+    default:
+      break; 
+  }
+  switch (this->heater_setup_error_code_) {
+    case WRITE_CLEAR_FAILED:
+      ESP_LOGW(TAG, "  Failed write clear status");
       break;
-    case READ_HEATER_STATUS_FAILED:
-      ESP_LOGW(TAG, "  read heater mode failed");
+    case WRITE_HEATER_MODE_FAILED:
+      ESP_LOGW(TAG, "  Failed to write heater mode");
+      break;
+    case READ_STATUS_FAILED:
+      ESP_LOGW(TAG, "  Failed to read heater mode");
       break;   
     default:
       break; 
-    return;
   }
-  
-  if (this->error_code_ != READ_SERIAL_FAILED) {
-    ESP_LOGD(TAG, "  Setup successful");
+
+  if (this->read_serial_error_code_ == NO_READ_SERIAL_ERROR) {
     ESP_LOGD(TAG, "  Serial Number: 0x%08" PRIX32, this->serial_number_);
   }
- 
-  //ESP_LOGD(TAG, "  After Reset Status: 0x%04x", this->setup_status_);
-  //ESP_LOGD(TAG, "  After Clear Status: 0x%04x", this->status_after_clear_);
   ESP_LOGD(TAG, "  Heater Enabled: %s", this->heater_enabled_ ? "true" : "false");
-  if ((this->status_after_heater_mode_ & 0x2000) == 0x2000) 
-    ESP_LOGD(TAG, "  Heater Mode: ON");
-  else
-    ESP_LOGD(TAG, "  Heater Mode: OFF");
-  ESP_LOGD(TAG, "  Heater Mode Status: 0x%04x ", this->status_after_heater_mode_);
+  if (this->heater_setup_error_code_ == NO_HEATER_SETUP_ERROR) {
+    if ((this->status_register_ & 0x2000) == 0x2000) {
+      ESP_LOGD(TAG, "  Heater Confirmed: ENABLED");
+    } else {
+      ESP_LOGD(TAG, "  Heater Confirmed: DISABLED");
+    }
+  } else {
+    ESP_LOGD(TAG, "  Unable to confirm Heater mode");
+  }
+
   LOG_I2C_DEVICE(this);
   LOG_UPDATE_INTERVAL(this);
 
@@ -143,11 +110,14 @@ float SHT3XDComponent::get_setup_priority() const { return setup_priority::DATA;
 
 void SHT3XDComponent::update() {
   if (this->status_has_warning()) {
-    ESP_LOGD(TAG, "Retrying to reconnect the sensor.");
-    this->write_command(SHT3XD_COMMAND_SOFT_RESET);
+    ESP_LOGD(TAG, "Trying to clear error with soft reset");
+    if (!this->write_command(SHT3XD_COMMAND_SOFT_RESET)) {
+      ESP_LOGD(TAG, "Failed to write soft reset");
+    }
+    delay(5);
   }
   if (!this->write_command(SHT3XD_COMMAND_POLLING_H)) {
-    ESP_LOGD(TAG, "write polling mode error");
+    ESP_LOGD(TAG, "Failed to write polling mode");
     this->status_set_warning();
     return;
   }
@@ -155,7 +125,7 @@ void SHT3XDComponent::update() {
   this->set_timeout(50, [this]() {
     uint16_t raw_data[2];
     if (!this->read_data(raw_data, 2)) {
-      ESP_LOGD(TAG, "read data error");
+      ESP_LOGD(TAG, "Failed to read sensor data");
       this->status_set_warning();
       return;
     }
