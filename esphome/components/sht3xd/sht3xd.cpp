@@ -27,7 +27,9 @@ static const uint16_t SHT3XD_COMMAND_FETCH_DATA = 0xE000;
 
 void SHT3XDComponent::setup() {
   ESP_LOGCONFIG(TAG, "Setting up SHT3xD...");
-  /*if (!this->write_command(SHT3XD_COMMAND_BREAK)) {
+  // working ok idf @800KHz i2c - remove other github libraries do not use except for sensiron example 
+  /*
+  if (!this->write_command(SHT3XD_COMMAND_BREAK)) {
     this->error_code_ = WRITE_BREAK_FAILED;
     this->status_has_warning();
   } 
@@ -39,6 +41,7 @@ void SHT3XDComponent::setup() {
   }
   delay(10);
 */
+  // working ok idf @800KHz i2c - remove as used for testing - usually see 0x0000 except when disconnect power on/off the 0x8020
   //if (!this->get_register(SHT3XD_COMMAND_READ_STATUS, &this->setup_status_, 1, 2)) {
   //    this->error_code_ = READ_STATUS_FAILED;
   //    this->status_has_warning();
@@ -49,13 +52,13 @@ void SHT3XDComponent::setup() {
   //  this->status_has_warning();
   //}
   //delay(2);
-
+  // working ok idf @800KHz i2c - remove as used for testing 0x0000 after
   //if (!this->get_register(SHT3XD_COMMAND_READ_STATUS, &this->status_after_clear_, 1, 2)) {
   //    this->error_code_ = READ_STATUS_FAILED;
   //    this->status_has_warning();
   //    return;
   //}
-  
+  // following works with delay selected 2ms because some write commands error with 1ms
   uint16_t raw_serial_number[2]{0,0};
   if (!this->get_register(SHT3XD_COMMAND_READ_SERIAL_NUMBER_CLOCK_STRETCHING, raw_serial_number, 2, 2)) {
     this->error_code_ = READ_SERIAL_STRETCHED_FAILED;
