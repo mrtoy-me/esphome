@@ -22,23 +22,23 @@ void HDC1080Component::setup() {
       return;
     }
       
-    this->set_timeout(20, [this]() {
+    //this->set_timeout(20, [this]() {
       if (this->read(reinterpret_cast<uint8_t *>(&this->boot_config_), 2) != i2c::ERROR_OK) {
         this->status_set_warning();
         ESP_LOGW(TAG, "Error reading configuration");
       }
       this->setup_complete_= true;
-    });
+    //});
   });
 }
 
 void HDC1080Component::dump_config() {
-  ESP_LOGCONFIG(TAG, "HDC1080 - No Config:");
+  ESP_LOGCONFIG(TAG, "HDC1080:");
+  ESP_LOGCONFIG(TAG, "  Boot Config: 0x%04X", this->boot_config_);
   LOG_I2C_DEVICE(this);
   if (this->is_failed()) {
     ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
   }
-  ESP_LOGCONFIG(TAG, "Boot Config: 0x%04X", this->boot_config_);
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Temperature", this->temperature_);
   LOG_SENSOR("  ", "Humidity", this->humidity_);
