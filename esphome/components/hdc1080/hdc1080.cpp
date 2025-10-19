@@ -10,19 +10,19 @@ static const char *const TAG = "hdc1080";
 static const uint8_t HDC1080_CMD_CONFIGURATION = 0x02;
 static const uint8_t HDC1080_CMD_TEMPERATURE = 0x00;
 static const uint8_t HDC1080_CMD_HUMIDITY = 0x01;
+static const uint8_t CONFIG = 0x10;
 
 void HDC1080Component::setup() {
-  const uint8_t config[2] = {0x00, 0x00};  // resolution 14bit for both humidity and temperature
+  //const uint8_t config = {0x10};  // resolution 14bit for both humidity and temperature
 
-  // if configuration fails - there is a problem
-  if (this->write_register(HDC1080_CMD_CONFIGURATION, config, 2) != i2c::ERROR_OK) {
-    this->mark_failed();
+  if (this->write_register(HDC1080_CMD_CONFIGURATION, &CONFIG, 1) != i2c::ERROR_OK) {
+    this->status_set_warning();
     return;
   }
 }
 
 void HDC1080Component::dump_config() {
-  ESP_LOGCONFIG(TAG, "HDC1080:");
+  ESP_LOGCONFIG(TAG, "HDC1080 Test1:");
   LOG_I2C_DEVICE(this);
   if (this->is_failed()) {
     ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
