@@ -12,10 +12,11 @@ static const uint8_t HDC1080_CMD_TEMPERATURE = 0x00;
 static const uint8_t HDC1080_CMD_HUMIDITY = 0x01;
 
 void HDC1080Component::setup() {
-  const uint8_t config[2] = {0x01,0x00};
+  
 
   // delay for sensor to be ready
   this->set_timeout(20, [this]() {
+    const uint8_t config[2] = {0x01,0x00};
     write_register(HDC1080_CMD_CONFIGURATION, config, 2);
 
     // get boot config
