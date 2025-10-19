@@ -12,21 +12,33 @@ static const uint8_t HDC1080_CMD_TEMPERATURE = 0x00;
 static const uint8_t HDC1080_CMD_HUMIDITY = 0x01;
 
 void HDC1080Component::setup() {
-  const uint8_t config[2] = {0x00, 0x00};  // resolution 14bit for both humidity and temperature
-
-  // if configuration fails - there is a problem
-  if (this->write_register(HDC1080_CMD_CONFIGURATION, config, 2) != i2c::ERROR_OK) {
-    this->mark_failed();
-    return;
-  }
+  // delay for sensor to be ready
+  this->set_timeout(20, [this]() {
+    // get boot config
+    if (this->write(&HDC1080_CMD_CONFIGURATION, 1) != i2c::ERROR_OK) {
+      this->status_set_warning();
+      ESP_LOGW(TAG, "Error writing config register");
+      this->setup_complete_= true;
+      return;
+    }
+      
+    this->set_timeout(20, [this]() {
+      if (this->read(reinterpret_cast<uint8_t *>(&this->boot_config_), 2) != i2c::ERROR_OK) {
+        this->status_set_warning();
+        ESP_LOGW(TAG, "Error reading configuration");
+      }
+      this->setup_complete_= true;
+    });
+  });
 }
 
 void HDC1080Component::dump_config() {
-  ESP_LOGCONFIG(TAG, "HDC1080:");
+  ESP_LOGCONFIG(TAG, "HDC1080 - No Config:");
   LOG_I2C_DEVICE(this);
   if (this->is_failed()) {
     ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
   }
+  ESP_LOGCONFIG(TAG, "Boot Config: 0x%04X", this->boot_config_);
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Temperature", this->temperature_);
   LOG_SENSOR("  ", "Humidity", this->humidity_);
@@ -35,6 +47,7 @@ void HDC1080Component::dump_config() {
 void HDC1080Component::update() {
   // regardless of what sensor/s are defined in yaml configuration
   // the hdc1080 setup configuration used, requires both temperature and humidity to be read
+  if(!this->setup_complete_) return;
 
   this->status_clear_warning();
 
