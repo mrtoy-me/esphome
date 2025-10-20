@@ -16,7 +16,7 @@ void HDC1080Component::setup() {
   // delay after boot
   this->set_timeout(20, [this]() {
     // get boot config
-    const uint8_t config[2] = {0x10,0x00};
+    const uint8_t config[2] = {0x00,0x00};
     write_register(HDC1080_CMD_CONFIGURATION, config, 2);
     if (read_register(HDC1080_CMD_CONFIGURATION, this->boot_config_, 2) != i2c::ERROR_OK) {
       this->status_set_warning();
