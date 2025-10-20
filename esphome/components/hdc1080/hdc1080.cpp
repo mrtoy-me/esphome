@@ -10,14 +10,15 @@ static const char *const TAG = "hdc1080";
 static const uint8_t HDC1080_CMD_CONFIGURATION = 0x02;
 static const uint8_t HDC1080_CMD_TEMPERATURE = 0x00;
 static const uint8_t HDC1080_CMD_HUMIDITY = 0x01;
+static const uint8_t MANUFACTURER = 0xFE;
 
 void HDC1080Component::setup() {
   
 
   // delay for sensor to be ready
   this->set_timeout(20, [this]() {
-    const uint8_t config[2] = {0x00,0x00};
-    write_register(HDC1080_CMD_CONFIGURATION, config, 2);
+    //const uint8_t config[2] = {0x10,0x00};
+    //write_register(HDC1080_CMD_CONFIGURATION, config, 2);
 
     // get boot config
     if (this->write(&HDC1080_CMD_CONFIGURATION, 1) != i2c::ERROR_OK) {
@@ -34,7 +35,19 @@ void HDC1080Component::setup() {
         ESP_LOGW(TAG, "Error reading configuration");
       }
       this->setup_complete_= true;
-    //});
+
+    // get boot config
+    if (this->write(&MANUFACTURER, 1) != i2c::ERROR_OK) {
+      this->status_set_warning();
+      ESP_LOGW(TAG, "Error writing config register");
+      this->setup_complete_= true;
+      return;
+    }
+      
+    if (this->read(this->manufacturer_, 2) != i2c::ERROR_OK) {
+      this->status_set_warning();
+      ESP_LOGW(TAG, "Error reading configuration");
+    }
   });
 }
 
@@ -42,6 +55,7 @@ void HDC1080Component::dump_config() {
   ESP_LOGCONFIG(TAG, "HDC1080:");
   //ESP_LOGCONFIG(TAG, "  Config: 0x%04X", this->boot_config_);
   ESP_LOGCONFIG(TAG, "  Config_b: 0x%02X%02X", this->boot_config_[0],this->boot_config_[1]);
+  ESP_LOGCONFIG(TAG, "  Manufacturer: 0x%02X%02X", this->manufacturer_[0],this->manufacturer_[1]);
   LOG_I2C_DEVICE(this);
   if (this->is_failed()) {
     ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
