@@ -12,25 +12,13 @@ static const uint8_t HDC1080_CMD_TEMPERATURE = 0x00;
 static const uint8_t HDC1080_CMD_HUMIDITY = 0x01;
 
 void HDC1080Component::setup() {
-  
   // delay after boot
   this->set_timeout(20, [this]() {
     // get boot config
-    //const uint8_t config[2] = {0x10,0x00};
-    //write_register(HDC1080_CMD_CONFIGURATION, config, 2);
     if (read_register(HDC1080_CMD_CONFIGURATION, this->boot_config_, 2) != i2c::ERROR_OK) {
       this->status_set_warning();
-      ESP_LOGW(TAG, "Error reading configuration");
+      this->setup_ok_= false;
     }
-    // if (this->write(&HDC1080_CMD_CONFIGURATION, 1) != i2c::ERROR_OK) {
-    //   this->status_set_warning();
-    //   ESP_LOGW(TAG, "Error writing config register");
-    // } else {
-    //   if (this->read(this->boot_config_, 2) != i2c::ERROR_OK) {
-    //     this->status_set_warning();
-    //     ESP_LOGW(TAG, "Error reading configuration");
-    //   }
-    // }
     this->setup_complete_= true;
     return;
   });
@@ -38,22 +26,23 @@ void HDC1080Component::setup() {
 
 void HDC1080Component::dump_config() {
   ESP_LOGCONFIG(TAG, "HDC1080:");
-  //ESP_LOGCONFIG(TAG, "  Config: 0x%04X", this->boot_config_);
-  ESP_LOGCONFIG(TAG, "  Configuration: 0x%02X%02X", this->boot_config_[0],this->boot_config_[1]);
-  LOG_I2C_DEVICE(this);
-  if (this->is_failed()) {
-    ESP_LOGE(TAG, ESP_LOG_MSG_COMM_FAIL);
+  if (this->setup_ok_) {
+    ESP_LOGCONFIG(TAG, "  Configuration: 0x%02X%02X", this->boot_config_[0],this->boot_config_[1]);
+  } else {
+    ESP_LOGW(TAG, "  Setup warning: error reading configuration");
   }
+  LOG_I2C_DEVICE(this);
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Temperature", this->temperature_);
   LOG_SENSOR("  ", "Humidity", this->humidity_);
 }
 
 void HDC1080Component::update() {
-  // regardless of what sensor/s are defined in yaml configuration
-  // the hdc1080 setup configuration used, requires both temperature and humidity to be read
   if(!this->setup_complete_) return;
 
+  // regardless of what sensor/s are defined in yaml configuration
+  // the hdc1080 setup configuration used, requires both temperature and humidity to be read
+  
   this->status_clear_warning();
 
   if (this->write(&HDC1080_CMD_TEMPERATURE, 1) != i2c::ERROR_OK) {

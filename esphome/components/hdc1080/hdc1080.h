@@ -20,8 +20,10 @@ class HDC1080Component : public PollingComponent, public i2c::I2CDevice {
 
  protected:
   bool setup_complete_{false};
-  //uint16_t boot_config_{0xFFFF};
+  bool setup_ok_{true};
+  
   uint8_t boot_config_[2]{0xFF,0xFF};
+
   sensor::Sensor *temperature_{nullptr};
   sensor::Sensor *humidity_{nullptr};
 };
