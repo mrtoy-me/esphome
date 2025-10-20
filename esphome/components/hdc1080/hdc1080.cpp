@@ -12,12 +12,15 @@ static const uint8_t HDC1080_CMD_TEMPERATURE = 0x00;
 static const uint8_t HDC1080_CMD_HUMIDITY = 0x01;
 
 void HDC1080Component::setup() {
+  
   // delay after boot
   this->set_timeout(20, [this]() {
     // get boot config
+    const uint8_t config[2] = {0x10,0x00};
+    write_register(HDC1080_CMD_CONFIGURATION, config, 2);
     if (this->write(&HDC1080_CMD_CONFIGURATION, 1) != i2c::ERROR_OK) {
       this->status_set_warning();
-      ESP_LOGW(TAG, "Error writing config register");
+      ESP_LOGW(TAG, "Error writing config register");7
     } else {
       if (this->read(this->boot_config_, 2) != i2c::ERROR_OK) {
         this->status_set_warning();
