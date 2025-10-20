@@ -20,7 +20,7 @@ void HDC1080Component::setup() {
     write_register(HDC1080_CMD_CONFIGURATION, config, 2);
     if (this->write(&HDC1080_CMD_CONFIGURATION, 1) != i2c::ERROR_OK) {
       this->status_set_warning();
-      ESP_LOGW(TAG, "Error writing config register");7
+      ESP_LOGW(TAG, "Error writing config register");
     } else {
       if (this->read(this->boot_config_, 2) != i2c::ERROR_OK) {
         this->status_set_warning();
