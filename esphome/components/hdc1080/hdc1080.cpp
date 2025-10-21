@@ -13,24 +13,16 @@ static const uint8_t HDC1080_CMD_HUMIDITY = 0x01;
 
 void HDC1080Component::setup() {
   // delay after boot
-  this->set_timeout(20, [this]() {
-    // get boot config
-    if (read_register(HDC1080_CMD_CONFIGURATION, this->boot_config_, 2) != i2c::ERROR_OK) {
-      this->status_set_warning();
-      this->setup_ok_= false;
-    }
-    this->setup_complete_= true;
-    return;
-  });
+  this->set_timeout(20, [this]() { this->setup_complete_= true; });
 }
 
 void HDC1080Component::dump_config() {
-  ESP_LOGCONFIG(TAG, "HDC1080:");
-  if (this->setup_ok_) {
-    ESP_LOGCONFIG(TAG, "  Configuration: 0x%02X%02X", this->boot_config_[0],this->boot_config_[1]);
-  } else {
-    ESP_LOGW(TAG, "  Setup warning: error reading configuration");
-  }
+  ESP_LOGCONFIG(TAG, "HDC1080 Null Setup:");
+  // if (this->setup_ok_) {
+  //   ESP_LOGCONFIG(TAG, "  Configuration: 0x%02X%02X", this->boot_config_[0],this->boot_config_[1]);
+  // } else {
+  //   ESP_LOGW(TAG, "  Setup warning: error reading configuration");
+  // }
   LOG_I2C_DEVICE(this);
   LOG_UPDATE_INTERVAL(this);
   LOG_SENSOR("  ", "Temperature", this->temperature_);
@@ -47,12 +39,14 @@ void HDC1080Component::update() {
 
   if (this->write(&HDC1080_CMD_TEMPERATURE, 1) != i2c::ERROR_OK) {
     this->status_set_warning();
+    ESP_LOGW(TAG, "Warning on temperature write");
     return;
   }
 
   this->set_timeout(20, [this]() {
     uint16_t raw_temperature;
     if (this->read(reinterpret_cast<uint8_t *>(&raw_temperature), 2) != i2c::ERROR_OK) {
+      ESP_LOGW(TAG, "Warning on temperature read");
       this->status_set_warning();
       return;
     }
@@ -64,6 +58,7 @@ void HDC1080Component::update() {
     }
 
     if (this->write(&HDC1080_CMD_HUMIDITY, 1) != i2c::ERROR_OK) {
+      ESP_LOGW(TAG, "Warning on humidity write");
       this->status_set_warning();
       return;
     }
@@ -71,6 +66,7 @@ void HDC1080Component::update() {
     this->set_timeout(20, [this]() {
       uint16_t raw_humidity;
       if (this->read(reinterpret_cast<uint8_t *>(&raw_humidity), 2) != i2c::ERROR_OK) {
+        ESP_LOGW(TAG, "Warning on humidity read");
         this->status_set_warning();
         return;
       }
