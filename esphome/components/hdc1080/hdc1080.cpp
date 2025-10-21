@@ -32,7 +32,7 @@ void HDC1080Component::setup() {
 }
 
 void HDC1080Component::dump_config() {
-  ESP_LOGCONFIG(TAG, "HDC1080:");
+  ESP_LOGCONFIG(TAG, "HDC1080 WR SETUP:");
   if (this->setup_ok_) {
     ESP_LOGCONFIG(TAG, "  Configuration: 0x%02X%02X", this->boot_config_[0],this->boot_config_[1]);
   } else {
