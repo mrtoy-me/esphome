@@ -15,12 +15,19 @@ void HDC1080Component::setup() {
   // delay after boot
   this->set_timeout(20, [this]() {
     // get boot config
-    if (read_register(HDC1080_CMD_CONFIGURATION, this->boot_config_, 2) != i2c::ERROR_OK) {
+    if (this->write(&HDC1080_CMD_CONFIGURATION, 1) != i2c::ERROR_OK) {
+      ESP_LOGW(TAG, "Warning on configuration write");
       this->status_set_warning();
       this->setup_ok_= false;
     }
+    if (this->setup_ok_) {
+      if (this->read(this->boot_config_, 2) != i2c::ERROR_OK) {
+        ESP_LOGW(TAG, "Warning on configuration read");
+        this->status_set_warning();
+        this->setup_ok_= false;
+      }
+    }
     this->setup_complete_= true;
-    return;
   });
 }
 
@@ -46,6 +53,7 @@ void HDC1080Component::update() {
   this->status_clear_warning();
 
   if (this->write(&HDC1080_CMD_TEMPERATURE, 1) != i2c::ERROR_OK) {
+    ESP_LOGW(TAG, "Warning on temperature write");
     this->status_set_warning();
     return;
   }
@@ -53,6 +61,7 @@ void HDC1080Component::update() {
   this->set_timeout(20, [this]() {
     uint16_t raw_temperature;
     if (this->read(reinterpret_cast<uint8_t *>(&raw_temperature), 2) != i2c::ERROR_OK) {
+      ESP_LOGW(TAG, "Warning on temperature read");
       this->status_set_warning();
       return;
     }
@@ -64,6 +73,7 @@ void HDC1080Component::update() {
     }
 
     if (this->write(&HDC1080_CMD_HUMIDITY, 1) != i2c::ERROR_OK) {
+      ESP_LOGW(TAG, "Warning on humidity write");
       this->status_set_warning();
       return;
     }
@@ -71,6 +81,7 @@ void HDC1080Component::update() {
     this->set_timeout(20, [this]() {
       uint16_t raw_humidity;
       if (this->read(reinterpret_cast<uint8_t *>(&raw_humidity), 2) != i2c::ERROR_OK) {
+        ESP_LOGW(TAG, "Warning on humidity read");
         this->status_set_warning();
         return;
       }
