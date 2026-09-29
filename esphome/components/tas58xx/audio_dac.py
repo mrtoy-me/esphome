@@ -57,6 +57,13 @@ MODELS: dict[str, Model] = {
         volume_max_db=24.0,
         default_address=0x2D,
     ),
+    "tas5825m": Model(
+        model_info=tas58xx_ns.TAS5825M_MODEL,
+        analog_gain_min_db=-15.5,
+        volume_min_db=-103.0,
+        volume_max_db=24.0,
+        default_address=0x4C,
+    ),
 }
 
 
