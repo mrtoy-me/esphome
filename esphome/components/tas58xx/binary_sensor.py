@@ -8,7 +8,7 @@ from .audio_dac import CONF_TAS58XX_ID, TAS58xx, tas58xx_ns
 
 CONF_HAVE_FAULT = "have_fault"
 
-# Each name matches a FaultSensor value in tas58xx.h
+# FAULT SENSOR superset includes extra tas582x warning bitss
 FAULT_SENSORS = (
     "left_channel_dc_fault",
     "right_channel_dc_fault",
@@ -16,13 +16,20 @@ FAULT_SENSORS = (
     "right_channel_over_current",
     "otp_crc_check",
     "bq_write_failed",
+    "load_eeprom_error",
     "clock_fault",
     "pvdd_over_voltage",
     "pvdd_under_voltage",
+    "right_channel_cbc_over_current",
+    "left_channel_cbc_over_current",
     "over_temp_shutdown",
-    "over_temp_warning",
+    "left_channel_cbc_over_current_warning",
+    "right_channel_cbc_over_current_warning",
+    "over_temp_146c_warning",   # tas582x OTW Level 4
+    "over_temp_warning",        # tas582x OTW Level 3 - keep tas5805 naming
+    # "over_temp_122c_warning", # tas582x OTW Level 2 - not currently included
+    # "over_temp_112c_warning", # tas582x OTW Level 1 - not currently included
 )
-
 FaultSensor = tas58xx_ns.enum("FaultSensor")
 
 _FAULT_SCHEMA = binary_sensor.binary_sensor_schema(

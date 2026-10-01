@@ -50,12 +50,12 @@ static const LogString *fault_name(uint8_t index) {
     return LOG_STR("Left channel CBC over current");
   if (index == 18)
     return LOG_STR("Right channel CBC over current");
-  if (index == 24)
-    return LOG_STR("Over temperature warning 112C");
-  if (index == 25)
-    return LOG_STR("Over temperature warning 122C");
+  // if (index == 24)
+  //   return LOG_STR("Over temperature warning 112C"); // not currently included
+  // if (index == 25)
+  //   return LOG_STR("Over temperature warning 122C"); // not currently included
   if (index == 26)
-    return LOG_STR("Over temperature warning 134C");
+    return LOG_STR("Over temperature warning");
   if (index == 27)
     return LOG_STR("Over temperature warning 146C");
   if (index == 28)
@@ -74,7 +74,7 @@ const ModelInfo TAS5805M_MODEL = {
     .mixer_register = 0x14,
     // The clock fault is left out of the log and have_fault: it is set whenever the I2S clock stops, which is normal
     .fault_error_mask = 0x0007E30F,
-    .fault_warning_mask = 0x3F000000,
+    .fault_warning_mask = 0x3C000000, // 0x3F000000 if OVER_TEMP_122C_WARNING and OVER_TEMP_112C_WARNING included in future
     // DC and over current faults keep the output off until cleared (datasheet 7.5.3.3.1, 7.5.3.3.2). They are not
     // cleared automatically: a DC fault re-trips only after 570 ms, so a clear on every poll would pass DC to the
     // speaker.
@@ -99,9 +99,9 @@ const ModelInfo TAS5805M_MODEL = {
             29,  // FAULT_SENSOR_LEFT_CHANNEL_CBC_OVER_CURRENT_WARNING
             28,  // FAULT_SENSOR_RIGHT_CHANNEL_CBC_OVER_CURRENT_WARNING
             27,  // FAULT_SENSOR_OVER_TEMP_146C_WARNING
-            26,  // FAULT_SENSOR_OVER_TEMP_134C_WARNING
-            25,  // FAULT_SENSOR_OVER_TEMP_122C_WARNING
-            24,  // FAULT_SENSOR_OVER_TEMP_112C_WARNING
+            26,  // FAULT_SENSOR_OVER_TEMP
+            // 25,  // FAULT_SENSOR_OVER_TEMP_122C_WARNING // not currently included
+            // 24,  // FAULT_SENSOR_OVER_TEMP_112C_WARNING // not currently included
         },
 };
 
