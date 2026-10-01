@@ -1,10 +1,11 @@
 import esphome.codegen as cg
 from esphome.components import binary_sensor
 import esphome.config_validation as cv
-from esphome.const import DEVICE_CLASS_PROBLEM, ENTITY_CATEGORY_DIAGNOSTIC
+from esphome.const import CONF_MODEL, DEVICE_CLASS_PROBLEM, ENTITY_CATEGORY_DIAGNOSTIC
+import esphome.final_validate as fv
 from esphome.types import ConfigType
 
-from .audio_dac import CONF_TAS58XX_ID, TAS58xx, tas58xx_ns
+from .audio_dac import CONF_TAS58XX_ID, DAC_TAS5825M, TAS58xx, tas58xx_ns
 
 CONF_HAVE_FAULT = "have_fault"
 
@@ -30,12 +31,44 @@ FAULT_SENSORS = (
     # "over_temp_122c_warning", # tas582x OTW Level 2 - not currently included
     # "over_temp_112c_warning", # tas582x OTW Level 1 - not currently included
 )
+
+# Keys in FAULT_SENSORS with no corresponding bit on the TAS5805M
+TAS5825M_ONLY_SENSORS = frozenset(
+    {
+        "load_eeprom_error",
+        "right_channel_cbc_over_current",
+        "left_channel_cbc_over_current",
+        "left_channel_cbc_over_current_warning",
+        "right_channel_cbc_over_current_warning",
+        "over_temp_146c_warning",
+    }
+)
+
 FaultSensor = tas58xx_ns.enum("FaultSensor")
 
 _FAULT_SCHEMA = binary_sensor.binary_sensor_schema(
     device_class=DEVICE_CLASS_PROBLEM,
     entity_category=ENTITY_CATEGORY_DIAGNOSTIC,
 )
+
+def _final_validate(config: ConfigType) -> ConfigType:
+    fconf = fv.full_config.get()
+    hub_path = fconf.get_path_for_id(config[CONF_TAS58XX_ID])
+    hub_conf = fconf.get_config_for_path(hub_path[:-1])
+
+    if hub_conf[CONF_MODEL] == DAC_TAS5825M:
+        return config
+
+    unsupported = sorted(TAS5825M_ONLY_SENSORS.intersection(config))
+    if unsupported:
+        raise cv.Invalid(
+            f"{', '.join(unsupported)} requires 'model: {DAC_TAS5825M}'; "
+            f"'{hub_conf[CONF_MODEL]}' does not have these fault available - remove from YAML"
+        )
+    return config
+
+
+FINAL_VALIDATE_SCHEMA = _final_validate
 
 CONFIG_SCHEMA = cv.Schema(
     {
