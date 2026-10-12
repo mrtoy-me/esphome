@@ -60,6 +60,18 @@ static const LogString *power_state_name(uint8_t state) {
   return LOG_STR("Play");
 }
 
+static const LogString *fault_output_name(FaultOutput fault_output) {
+  if (fault_output == FAULT_OUTPUT_ADR)
+    return LOG_STR("ADR");
+  if (fault_output == FAULT_OUTPUT_GPIO0)
+    return LOG_STR("GPIO0");
+  if (fault_output == FAULT_OUTPUT_GPIO1)
+    return LOG_STR("GPIO1");
+  if (fault_output == FAULT_OUTPUT_GPIO2)
+    return LOG_STR("GPIO2");
+  return LOG_STR("None");
+}
+
 void TAS58xx::setup() {
   if (this->enable_pin_ != nullptr) {
     this->enable_pin_->setup();
@@ -94,6 +106,23 @@ bool TAS58xx::init_() {
   for (uint8_t i = 0; i < this->model_->startup_sequence_length; i++) {
     const uint8_t *entry = this->model_->startup_sequence[i];
     if (!this->write_byte(progmem_read_byte(&entry[0]), progmem_read_byte(&entry[1]))) {
+      ESP_LOGE(TAG, "I2C write failed during init");
+      return false;
+    }
+  }
+
+  // The I2C address is latched at power up, after which ADR can also be used as an output.
+  // With no fault output, nothing is written and the pin keeps its power on state. The pin function is
+  // written before the output enable, so the pin never drives another function.
+  if (this->fault_output_ != FAULT_OUTPUT_NONE) {
+    // The setter is public, so check the pin exists on this model; YAML only allows the pins of the model
+    const FaultOutputInfo *output =
+        this->fault_output_ < FAULT_OUTPUT_COUNT ? &this->model_->fault_outputs[this->fault_output_] : nullptr;
+    if (output == nullptr || output->select_register == 0) {
+      ESP_LOGW(TAG, "Fault output %s is not available on %s", LOG_STR_ARG(fault_output_name(this->fault_output_)),
+               LOG_STR_ARG(this->model_->name()));
+    } else if (!this->write_byte(output->select_register, this->model_->fault_output_function) ||
+               !this->write_byte(this->model_->fault_output_ctrl_register, output->output_mask)) {
       ESP_LOGE(TAG, "I2C write failed during init");
       return false;
     }
@@ -265,10 +294,12 @@ void TAS58xx::dump_config() {
                 "  Analog Gain: %.1f dB\n"
                 "  DAC Mode: %s\n"
                 "  Mixer Mode: %s\n"
-                "  Volume Range: %.1f dB to %.1f dB",
+                "  Volume Range: %.1f dB to %.1f dB\n"
+                "  Fault Output: %s",
                 this->analog_gain_db_,
                 this->dac_mode_ == DAC_MODE_PBTL ? LOG_STR_LITERAL("PBTL") : LOG_STR_LITERAL("BTL"),
-                LOG_STR_ARG(mixer_mode), this->volume_min_db_, this->volume_max_db_);
+                LOG_STR_ARG(mixer_mode), this->volume_min_db_, this->volume_max_db_,
+                LOG_STR_ARG(fault_output_name(this->fault_output_)));
 #ifdef USE_BINARY_SENSOR
   LOG_BINARY_SENSOR("  ", "Any Fault", this->have_fault_binary_sensor_);
   for (auto *sensor : this->fault_binary_sensors_) {

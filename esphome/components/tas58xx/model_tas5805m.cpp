@@ -10,9 +10,6 @@ static const uint8_t STARTUP_SEQUENCE[][2] PROGMEM = {
     {0x03, 0x00},  // DEVICE_CTRL_2: deep sleep
     {0x46, 0x01},
     {0x03, 0x02},  // DEVICE_CTRL_2: Hi-Z
-    // The I2C address is latched at power up, after which the ADR pin can report faults
-    {0x61, 0x0B},  // ADR_PIN_CONFIG: FAULTZ
-    {0x60, 0x01},  // ADR_PIN_CTRL: output
     {0x7D, 0x11},
     {0x7E, 0xFF},
     {0x00, 0x01},  // Page 1
@@ -87,6 +84,12 @@ const ModelInfo TAS5805M_MODEL = {
             NO_BIT,  // FAULT_SENSOR_LEFT_CHANNEL_CBC_OVER_CURRENT_WARNING
             NO_BIT,  // FAULT_SENSOR_RIGHT_CHANNEL_CBC_OVER_CURRENT_WARNING
             NO_BIT,  // FAULT_SENSOR_OVER_TEMP_146C_WARNING
+        },
+    .fault_output_ctrl_register = 0x60,  // ADR_PIN_CTRL
+    .fault_output_function = 0x0B,       // ADR_PIN_CONFIG: ADR as FAULTZ output
+    .fault_outputs =
+        {
+            {0x61, 0x01},  // FAULT_OUTPUT_ADR: ADR_PIN_CONFIG, ADR_OE. TAS5805M has no GPIOx (zero filled)
         },
 };
 
