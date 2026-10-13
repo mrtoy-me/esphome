@@ -21,6 +21,7 @@ CONF_ANALOG_GAIN = "analog_gain"
 CONF_DAC_MODE = "dac_mode"
 CONF_IGNORE_ENABLE_PIN_WARNING = "ignore_enable_pin_warning"
 CONF_MIXER_MODE = "mixer_mode"
+CONF_MODULATION = "modulation"
 CONF_VOLUME_MIN_DB = "volume_min_db"
 CONF_VOLUME_MAX_DB = "volume_max_db"
 CONF_TAS58XX_ID = "tas58xx_id"
@@ -44,6 +45,13 @@ MIXER_MODES = {
     "mono": MixerMode.MIXER_MODE_MONO,
     "left": MixerMode.MIXER_MODE_LEFT,
     "right": MixerMode.MIXER_MODE_RIGHT,
+}
+
+
+Modulation = tas58xx_ns.enum("Modulation")
+MODULATIONS = {
+    "bd_mode": Modulation.MODULATION_BD,
+    "1spw_mode": Modulation.MODULATION_1SPW,
 }
 
 
@@ -109,6 +117,9 @@ def _model_schema(model: Model) -> cv.Schema:
                 ),
                 cv.Optional(CONF_MIXER_MODE, default="stereo"): cv.enum(
                     MIXER_MODES, lower=True
+                ),
+                cv.Optional(CONF_MODULATION, default="bd_mode"): cv.enum(
+                    MODULATIONS, lower=True
                 ),
                 cv.Optional(
                     CONF_VOLUME_MIN_DB, default=model.volume_min_db
@@ -182,6 +193,7 @@ async def to_code(config: ConfigType) -> None:
     cg.add(var.set_analog_gain(config[CONF_ANALOG_GAIN]))
     cg.add(var.set_dac_mode(config[CONF_DAC_MODE]))
     cg.add(var.set_mixer_mode(config[CONF_MIXER_MODE]))
+    cg.add(var.set_modulation(config[CONF_MODULATION]))
     cg.add(var.set_volume_min_db(config[CONF_VOLUME_MIN_DB]))
     cg.add(var.set_volume_max_db(config[CONF_VOLUME_MAX_DB]))
     if enable_pin_config := config.get(CONF_ENABLE_PIN):
