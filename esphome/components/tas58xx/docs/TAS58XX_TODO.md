@@ -2,8 +2,8 @@
 
 Working notes for this branch only. Do not include this file in any PR branch.
 
-The main plan (EQ control proposal, upstream PR plan) is in `docs/dev-notes.md` of `mrtoy-me/esphome-tas58xx`
-(branch `dev_update_eq_proto`) and `docs/TAS58xx_EQ_Control_Proposal_v1.docx` there.
+The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes and upstream PR plan are in
+`dev-notes.md`, both in this folder. The proof of concept is `mrtoy-me/esphome-tas58xx` branch `dev_update_eq_proto`.
 
 ## To-do
 - `volume_follows: <audio_dac id>` option: a DAC that no speaker drives (eg a second DAC on the same I2S output)
