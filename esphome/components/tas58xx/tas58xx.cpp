@@ -1,5 +1,6 @@
 #include "tas58xx.h"
 
+#include <algorithm>
 #include <cmath>
 
 #include "esphome/core/hal.h"
@@ -45,6 +46,10 @@ static constexpr uint8_t TAS58XX_MIXER_COEFFICIENT_SIZE = 4;
 static constexpr uint8_t TAS58XX_MIXER_MUTE = 0x00;
 static constexpr uint8_t TAS58XX_MIXER_MINUS_6DB = 0x40;
 static constexpr uint8_t TAS58XX_MIXER_0DB = 0x80;
+
+/* Channel volumes, two 9.23 fixed point big endian coefficients at a location that differs per model */
+static constexpr uint8_t TAS58XX_COEFFICIENT_SIZE = 4;
+static constexpr float TAS58XX_COEFFICIENT_ONE = 8388608.0f;  // 1.0 (0 dB) in 9.23 fixed point
 
 static constexpr uint32_t PDN_LOW_MS = 1;
 static constexpr uint32_t PDN_TO_I2C_MS = 5;  // Minimum time from PDN high to I2C access
@@ -109,9 +114,10 @@ bool TAS58xx::init_() {
     ESP_LOGE(TAG, "I2C write failed during init");
     return false;
   }
-  // The mixer is written once the I2S clocks run, see on_audio_started() and update()
+  // The mixer and channel volumes are written once the I2S clocks run, see on_audio_started() and update()
   this->power_state_ = TAS58XX_CTRL_STATE_UNKNOWN;
   this->mixer_written_ = false;
+  this->channel_volumes_written_ = !this->channel_volumes_set_;
   return true;
 }
 
@@ -214,10 +220,18 @@ bool TAS58xx::read_faults_() {
 
 void TAS58xx::on_audio_started() {
   // DSP coefficients can only be written with a running I2S clock (datasheet 7.5.3.1) and are kept when it stops
-  if (this->is_failed() || this->mixer_written_)
+  if (this->is_failed())
     return;
-  if (!this->write_mixer_()) {
+  this->write_pending_dsp_();
+}
+
+// Write the DSP coefficients not yet written; a failed write is retried at the next audio start or update
+void TAS58xx::write_pending_dsp_() {
+  if (!this->mixer_written_ && !this->write_mixer_()) {
     ESP_LOGW(TAG, "Failed to write mixer");
+  }
+  if (!this->channel_volumes_written_ && !this->write_channel_volumes_()) {
+    ESP_LOGW(TAG, "Failed to write channel volumes");
   }
 }
 
@@ -234,11 +248,9 @@ void TAS58xx::update() {
     ESP_LOGD(TAG, "[0x%02X] Power state: %s", this->address_, LOG_STR_ARG(power_state_name(power_state)));
     this->power_state_ = power_state;
   }
-  // The device only plays with a running I2S clock. Fallback for speakers that do not call on_audio_started();
-  // a failed write is retried on the next update.
-  if (power_state == TAS58XX_CTRL_STATE_PLAY && !this->mixer_written_ && !this->write_mixer_()) {
-    ESP_LOGW(TAG, "Failed to write mixer");
-  }
+  // The device only plays with a running I2S clock. Fallback for speakers that do not call on_audio_started().
+  if (power_state == TAS58XX_CTRL_STATE_PLAY)
+    this->write_pending_dsp_();
 }
 
 void TAS58xx::dump_config() {
@@ -332,6 +344,43 @@ bool TAS58xx::write_mixer_() {
   // Always return to the control port, even after a failed write
   ok = this->select_book_page_(TAS58XX_BOOK_CONTROL, TAS58XX_PAGE_0) && ok;
   this->mixer_written_ = ok;
+  return ok;
+}
+
+void TAS58xx::set_channel_volume(Channel channel, float volume_db) {
+  if (channel >= CHANNEL_COUNT)
+    return;
+  this->channel_volume_db_[channel] = clamp(volume_db, CHANNEL_VOLUME_MIN_DB, CHANNEL_VOLUME_MAX_DB);
+  this->channel_volumes_set_ = true;
+  this->channel_volumes_written_ = false;
+  ESP_LOGD(TAG, "[0x%02X] %s channel volume: %.1f dB", this->address_,
+           channel == CHANNEL_LEFT ? LOG_STR_LITERAL("Left") : LOG_STR_LITERAL("Right"),
+           this->channel_volume_db_[channel]);
+  if (this->is_failed())
+    return;
+  // DSP coefficients need a running I2S clock: write now while playing, otherwise on_audio_started() or update()
+  // writes the channel volumes when audio starts
+  uint8_t power_state;
+  if (this->read_byte(TAS58XX_POWER_STATE, &power_state) &&
+      (power_state & TAS58XX_CTRL_STATE_MASK) == TAS58XX_CTRL_STATE_PLAY && !this->write_channel_volumes_()) {
+    ESP_LOGW(TAG, "Failed to write channel volumes");
+  }
+}
+
+bool TAS58xx::write_channel_volumes_() {
+  // Each volume is a linear gain as 9.23 fixed point, big endian
+  uint8_t coefficients[CHANNEL_COUNT * TAS58XX_COEFFICIENT_SIZE];
+  for (uint8_t channel = 0; channel < CHANNEL_COUNT; channel++) {
+    const uint32_t gain = static_cast<uint32_t>(
+        lroundf(powf(10.0f, this->channel_volume_db_[channel] / 20.0f) * TAS58XX_COEFFICIENT_ONE));
+    const auto bytes = decode_value(gain);
+    std::copy(bytes.begin(), bytes.end(), &coefficients[channel * TAS58XX_COEFFICIENT_SIZE]);
+  }
+  bool ok = this->select_book_page_(this->model_->channel_volume_book, this->model_->channel_volume_page) &&
+            this->write_bytes(this->model_->channel_volume_register, coefficients, sizeof(coefficients));
+  // Always return to the control port, even after a failed write
+  ok = this->select_book_page_(TAS58XX_BOOK_CONTROL, TAS58XX_PAGE_0) && ok;
+  this->channel_volumes_written_ = ok;
   return ok;
 }
 

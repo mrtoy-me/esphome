@@ -59,6 +59,9 @@ const ModelInfo TAS5805M_MODEL = {
     .mixer_book = 0x8C,
     .mixer_page = 0x29,
     .mixer_register = 0x18,
+    .channel_volume_book = 0x8C,
+    .channel_volume_page = 0x2A,
+    .channel_volume_register = 0x24,
     // The clock fault is left out of the log and have_fault: it is set whenever the I2S clock stops, which is normal
     .fault_error_mask = 0x0001C30F,
     .fault_warning_mask = 0x04000000,

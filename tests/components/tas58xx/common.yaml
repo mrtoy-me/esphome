@@ -24,6 +24,14 @@ esphome:
         id: tas58xx_amp
     - tas58xx.activate: tas58xx_amp_2
 
+number:
+  - platform: tas58xx
+    tas58xx_id: tas58xx_amp
+    channel_volume_left:
+      name: Left Channel Volume
+    channel_volume_right:
+      name: Right Channel Volume
+
 binary_sensor:
   - platform: tas58xx
     tas58xx_id: tas58xx_amp
