@@ -16,9 +16,26 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
     whether those should be VERBOSE (the media player already logs each change at DEBUG).
 - Skip unchanged volume writes in `set_volume()`: a `speaker_source` media player calls `set_volume()` on every
   pipeline's speaker, so with media + announcement pipelines on one I2S speaker `DIG_VOL` is written twice per
-  change. ESPHome's `set_volume()` already keeps `previous`; skip `write_volume_()` when the register value is
-  unchanged. Done in the proof of concept (`dev_update_eq_proto`, 2026-10-18: cached last DIG_VOL value, 0xFF until
-  the first write). Could be its own small PR.
+  change. Done in the proof of concept (`dev_update_eq_proto`, 2026-10-18: cached last DIG_VOL value). Could be its
+  own small PR. Agreed form for ESPHome's tas58xx (uses the existing `previous`, no new member or helper):
+  ```cpp
+  bool TAS58xx::set_volume(float volume) {
+    const float previous = this->volume_;
+    this->volume_ = clamp(volume, 0.0f, 1.0f);
+    // a speaker_source media player sets the volume on every pipeline's speaker, so the same volume can arrive
+    // more than once; only write when it changes
+    if (this->volume_ == previous)
+      return true;
+    if (!this->write_volume_()) {
+      this->volume_ = previous;
+      return false;
+    }
+    return true;
+  }
+  ```
+  Exact float `==` is safe: the duplicates are the same `bounded_volume` value passed to each pipeline's speaker.
+  A failed write restores `previous`, so the next call retries; `init_()` still writes DIG_VOL after reset.
+  Changes too small to move the 0.5 dB step are still written (harmless).
 - `FS_MON` (0x37) check: once audio starts, read the detected input sample rate and log a warning if it is not
   48 kHz or 96 kHz (eg an unexpected `sample_rate:` of 16k or 32k). It shows the I2S input rate, not the DSP
   processing rate, and cannot tell 44.1 kHz from 48 kHz (44.1k has no code and reads back as 48k), so 44.1k input
