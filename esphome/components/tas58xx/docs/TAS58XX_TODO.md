@@ -44,6 +44,8 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
   version in the style of the biquad helpers, compare its complexity and cost with Butterworth 2, then either add it
   as another filter type or shelve it. A one-off cloud run on 2026-10-19 (midnight Brisbane) writes the study to
   `chebyshev-study.md` in this folder (added 2026-10-18).
+  - (routine 2026-10-19) Study done: `chebyshev-study.md`. Recommendation: include (similar cost to Butterworth 2; C++ matches
+    the reference with 0 LSB and the main branch presets are Chebyshev 0.5 dB).
 - `FS_MON` (0x37) check: once audio starts, read the detected input sample rate and log a warning if it is not
   48 kHz or 96 kHz (eg an unexpected `sample_rate:` of 16k or 32k). It shows the I2S input rate, not the DSP
   processing rate, and cannot tell 44.1 kHz from 48 kHz (44.1k has no code and reads back as 48k), so 44.1k input
