@@ -36,6 +36,10 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
   Exact float `==` is safe: the duplicates are the same `bounded_volume` value passed to each pipeline's speaker.
   A failed write restores `previous`, so the next call retries; `init_()` still writes DIG_VOL after reset.
   Changes too small to move the 0.5 dB step are still written (harmless).
+  To look at when doing it: the proof of concept avoids those sub-step writes too, because it keeps the last raw
+  DIG_VOL value written (`tas58xx_raw_volume_`, one byte) and compares register values instead of volumes. Decide
+  between that (one byte, skips every unchanged register write) and the `previous` form above (no new member,
+  simplest for review).
 - `FS_MON` (0x37) check: once audio starts, read the detected input sample rate and log a warning if it is not
   48 kHz or 96 kHz (eg an unexpected `sample_rate:` of 16k or 32k). It shows the I2S input rate, not the DSP
   processing rate, and cannot tell 44.1 kHz from 48 kHz (44.1k has no code and reads back as 48k), so 44.1k input
