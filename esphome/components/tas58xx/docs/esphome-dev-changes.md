@@ -7,7 +7,7 @@ Reviews of `esphome/esphome` `dev` merges that affect ESPHome's own tas58xx, the
 `add_mixer_select` and `add_channel_volume` (all in `mrtoy-me/esphome`). Updated daily by a scheduled routine and in
 interactive sessions; newest section at the bottom.
 
-Last reviewed dev commit: 0bb78186f2
+Last reviewed dev commit: dd456ea0b2
 
 ## Watching (open PRs that change tas58xx)
 - #20864 (uses `status_comm_result` in tas58xx `update()`), stacked on #20863 (merged).
@@ -40,3 +40,27 @@ Last reviewed dev commit: 0bb78186f2
   modulation and PBTL, AGAIN); #20938 little-endian and signed decode helpers.
 - Conventions: #21014 do not override `get_setup_priority()` when it returns the default; #20874 core reports
   communication failures in `dump_config`; #20943 components use `check_chip_id`; #20932 `ESP_LOG*_HEX` for hex dumps.
+
+## 0bb78186f2..dd456ea0b2 (reviewed 2026-10-18, routine)
+Watched PRs #20864, #20912, #20913 have not merged yet; they stay under 'Watching'.
+- #21018 [core] new `cg.add_pin(setter, pin_config)` and `cg.add_variable(setter, id)` (in `cpp_helpers`, exported by
+  `codegen`). `add_pin` does nothing when the pin is not configured; `add_variable` looks up the id and calls the setter.
+- #21019 [components] ESPHome's tas58xx `audio_dac.py` now ends with `await cg.add_pin(var.set_enable_pin,
+  config.get(CONF_ENABLE_PIN))`, replacing the `if enable_pin_config := ...` block with `gpio_pin_expression`.
+  - (a) Only change to tas58xx files in this range. No behaviour change.
+  - (c) Likely rebase conflict at the end of `to_code()` in `audio_dac.py` for any waiting branch that edits the
+    lines around `set_enable_pin` (add_fault_output most likely, as it adds a pin). Take the `cg.add_pin` form.
+  - (d) New tas58xx code that sets an optional pin (eg a fault output pin) should use `cg.add_pin`, and one that
+    sets a referenced component by id should use `cg.add_variable`.
+- #21021 / #21023 [components] reference components are set with `cg.add_variable` / `register_parented`. The only
+  file of interest is `i2c/__init__.py`: `register_i2c_device()` now uses `cg.add_variable(var.set_i2c_bus, ...)`.
+  No change for tas58xx; no conflict expected.
+- #21017 [core] `EntityBase::make_entity_preference<T>(version, in_flash)` overload: an entity can choose flash or RTC
+  storage. Not used by tas58xx; relevant only if EQ settings are ever stored per entity (the plan does not).
+- #21003 [core] AGENTS.md: a hub's entities go in platform files (`sensor.py`, ...) taking the hub's id, not under the
+  hub's own key. New EQ entities (number/select/switch) already follow this as platforms; no action.
+- Checked, not relevant: #21077 api, #21026 / #21025 BLE and modbus helpers, #21029 / #21030 / #21071 / #21035
+  uart `discard_available`, #20994 bme68x_bsec2, #15348 / #20787 / #11354 light and homeassistant, #20790
+  `progmem_string_table_find()` (core helper, no tas58xx use today), #21016 `encode_uint24`, #20939 little-endian I2C
+  helpers, #21015 `cv.uint8_t` / `cv.uint16_t` (could replace `cv.int_range` over a full byte range in new
+  validators; optional).

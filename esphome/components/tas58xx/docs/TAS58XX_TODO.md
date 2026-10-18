@@ -50,3 +50,6 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
   48 kHz or 96 kHz (eg an unexpected `sample_rate:` of 16k or 32k). It shows the I2S input rate, not the DSP
   processing rate, and cannot tell 44.1 kHz from 48 kHz (44.1k has no code and reads back as 48k), so 44.1k input
   still needs the acoustic check (narrow +12 dB peak at 1 kHz, measured). Codes: 48k `1001`, 96k `1011`.
+- When rebasing add_fault_output (and any branch editing the end of `to_code()` in `audio_dac.py`), use
+  `await cg.add_pin(var.set_enable_pin, config.get(CONF_ENABLE_PIN))` as in dev (#21019), and use `cg.add_pin` for the
+  new fault pin too (routine 2026-10-18).
