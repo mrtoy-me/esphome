@@ -14,6 +14,11 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
     volume, mute and audio start passed on, follower checks Play, guards in `add_volume_follower()`).
   - Logs: there a follower logs "Volume change / Mute / Unmute followed by 0x.." at DEBUG. When porting, decide
     whether those should be VERBOSE (the media player already logs each change at DEBUG).
+- Skip unchanged volume writes in `set_volume()`: a `speaker_source` media player calls `set_volume()` on every
+  pipeline's speaker, so with media + announcement pipelines on one I2S speaker `DIG_VOL` is written twice per
+  change. ESPHome's `set_volume()` already keeps `previous`; skip `write_volume_()` when the register value is
+  unchanged. Done in the proof of concept (`dev_update_eq_proto`, 2026-10-18: cached last DIG_VOL value, 0xFF until
+  the first write). Could be its own small PR.
 - `FS_MON` (0x37) check: once audio starts, read the detected input sample rate and log a warning if it is not
   48 kHz or 96 kHz (eg an unexpected `sample_rate:` of 16k or 32k). It shows the I2S input rate, not the DSP
   processing rate, and cannot tell 44.1 kHz from 48 kHz (44.1k has no code and reads back as 48k), so 44.1k input
