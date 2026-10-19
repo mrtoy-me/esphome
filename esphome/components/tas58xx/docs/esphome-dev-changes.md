@@ -10,6 +10,11 @@ interactive sessions; newest section at the bottom.
 Last reviewed dev commit: dd456ea0b2
 
 ## Watching (open PRs that change tas58xx)
+- #21083 (bdraco, open 2026-10-19): the startup sequences in `model_tas5805m.cpp` / `model_tas5825m.cpp` become
+  `static constexpr i2c::I2CRegValue STARTUP_SEQUENCE[] PROGMEM`, `ModelInfo::startup_sequence` becomes
+  `const i2c::I2CRegValue *`, and `init_()` writes it with one `write_registers()` call (uses #20945). Conflicts
+  expected with `add_fault_output` (it edits both startup sequences and `ModelInfo`); `add_channel_volume` adds
+  `ModelInfo` fields nearby. New startup or register-table code should use `I2CRegValue` / `write_registers()`.
 - #20864 (uses `status_comm_result` in tas58xx `update()`), stacked on #20863 (merged).
 - #20912 adds `final_validate.get_declaring_config()`; #20913 uses it in tas58xx `binary_sensor.py`. Our EQ
   final validation should use it instead of the hand-written parent config lookup once merged.
