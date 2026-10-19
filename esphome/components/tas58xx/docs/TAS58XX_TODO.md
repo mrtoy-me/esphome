@@ -49,8 +49,13 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
     `CHEBYSHEV_RIPPLE_DB` (0.5), so Q is fixed as for low and high pass. A YAML `ripple:` option later would pass a
     value instead of the constant.
   - Gain limits are the same as the Butterworth filters: low pass -24 to +24 dB, high pass -24 to +18 dB (largest
-    coefficient 14.99 at 10 Hz, +18 dB). The C++ boot clamp already includes `FILTER_TYPE_HIGH_PASS_CHEBYSHEV`; when
-    the YAML names are added, put `high_pass_chebyshev` in `EQ_GAIN_LIMITED_FILTERS` in `audio_dac.py`.
+    coefficient 14.99 at 10 Hz, +18 dB). `chebyshev_filter()` guards its own gain (as every filter does since
+    2026-10-19, with a warning when it limits). The YAML band range is -24 to +18 dB for every filter, so adding the
+    YAML names needs no gain-limit changes in Python.
+- EQ band gain limits (`add_eq_gain_limits`, merged into `dev_update_eq_proto` 2026-10-19): `gain_min` / `gain_max` at
+  platform and band level, -24 to +18 dB for every filter (a design choice; each C++ filter guards its own technical
+  limit, -24 to +24 dB, high shelf / high pass +18 dB). A saved gain outside the range is moved to the nearest limit
+  at boot, with a warning, and saved. `dump_config` shows each band's gain range. Carry into the upstream EQ PRs.
   - (routine 2026-10-19) Study done: `chebyshev-study.md`. Recommendation: include (similar cost to Butterworth 2; C++ matches
     the reference with 0 LSB and the main branch presets are Chebyshev 0.5 dB).
 - `FS_MON` (0x37) check: once audio starts, read the detected input sample rate and log a warning if it is not
