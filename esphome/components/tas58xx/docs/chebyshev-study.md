@@ -166,6 +166,23 @@ ripple band edge):
   added, 0.1 to 1.0 dB is the sensible range (this replaces the 0.1 to 3.0 suggested above); above 1 dB the bump
   sounds like a deliberate boost.
 
+### sqrt cost, and constants if the ripple stays fixed (2026-10-19, for later)
+
+- The ESP32 FPU is single precision only, so every double operation is software. Rough order (not measured):
+  add / multiply cheapest, divide and sqrt a few times more (similar to each other), sin / cos / tan / exp several
+  times more again (series of multiplies). sqrt is not the expensive part.
+- sqrt use in the helpers: only band pass (1, and it replaces a cos: 1 / cos(x) = sqrt(1 + tan(x)^2)) and Chebyshev
+  (2, plus 1 exp). Shelf avoids one (sqrt(A) = 10^(gain / 80)); Butterworth uses the constant `INVERSE_SQRT2`.
+- No useful sqrt speed-up: `sqrtf` or fast inverse sqrt tricks are float accuracy (24 bits) and would lose the 1 LSB
+  match with PPC3. The only real saving is not calculating it.
+- If the ripple is never made configurable, `b`, `c` and `p` depend only on the ripple and can be constants. For
+  0.5 dB (from `chebyshev_filter()`'s own maths, check p^2 = 2b - 1):
+  `b = 1.5162026269459308`, `c = 1.4313875806215943`, `p = 1.4256245136402017`.
+  Then the filter is one `tan`, one divide and an exp only when the gain is not 0 (`linear_gain`), cheaper than
+  Butterworth (sin and cos). Cost: the `ripple` argument goes, so a later `ripple:` option would need it back.
+- Not worth it for speed now: a band is recalculated only when its setting changes, not per sample. Keep the
+  ripple argument (`CHEBYSHEV_RIPPLE_DB`) unless the ripple is decided to be fixed for good.
+
 ## Proposal
 
 - **YAML** (EQ band, as the other `eq_filter` values): `low_pass_chebyshev`, `high_pass_chebyshev`.
