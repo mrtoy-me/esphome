@@ -64,6 +64,9 @@ Notes:
   setup. First check the datasheets for a usable ID register and its value per model.
 - **Hex log macros:** `ESP_LOGV_HEX` / `ESP_LOGD_HEX` (#20931) for verbose dumps of DSP writes or coefficients.
   Minor; only if the EQ code logs raw bytes.
+- (routine 2026-10-19) #20935 Apply entities let hub-forwarding number, select and switch entities skip their own C++
+  class (`apply=`, `publish=`). Check this for the EQ entities and the mixer / channel volume branches. #20912 and
+  #20864 have merged; use `get_declaring_config()` and `status_comm_result` in new code.
 
 ## EQ band and fixed filter YAML rework (plan, 2026-10-16, branch `dev_update_eq_proto`, named `dev_update_eq_test` until 2026-10-18)
 Branch `dev_update_eq_proto` is based on `dev_update_with_onaudio_plus_eq` (`0a1bd72`). **Breaking YAML changes

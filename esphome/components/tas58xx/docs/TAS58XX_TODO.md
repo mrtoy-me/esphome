@@ -69,3 +69,7 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
   0x86 (reserved bit 7, DRC and FIR bypassed, EQ on, ganged) with bit 0 for EQ bypass and bit 3 for unique left and
   right coefficients, ie `0x86 | bypass | unique`. `dev_update_eq_proto` writes 0x06 (no bit 7); it stays as is (frozen).
   Never write 0x66 on the TAS5825M (it is GPIO_OUT_INV there). Details in dev-notes.md, "PPC3 audio modes".
+- Use `final_validate.get_declaring_config()` (#20912, merged) in the EQ final validation instead of
+  `get_path_for_id()` (routine 2026-10-19).
+- Check whether the EQ number, select and switch entities can use the Apply entities (#20935: `apply=` / `publish=`
+  on `sub_numbers` etc., no per-entity class) before writing entity classes (routine 2026-10-19).

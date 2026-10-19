@@ -7,7 +7,7 @@ Reviews of `esphome/esphome` `dev` merges that affect ESPHome's own tas58xx, the
 `add_mixer_select` and `add_channel_volume` (all in `mrtoy-me/esphome`). Updated daily by a scheduled routine and in
 interactive sessions; newest section at the bottom.
 
-Last reviewed dev commit: dd456ea0b2
+Last reviewed dev commit: 65ba64b9a6
 
 ## Watching (open PRs that change tas58xx)
 - #21083 (bdraco, open 2026-10-19): the startup sequences in `model_tas5805m.cpp` / `model_tas5825m.cpp` become
@@ -15,9 +15,8 @@ Last reviewed dev commit: dd456ea0b2
   `const i2c::I2CRegValue *`, and `init_()` writes it with one `write_registers()` call (uses #20945). Conflicts
   expected with `add_fault_output` (it edits both startup sequences and `ModelInfo`); `add_channel_volume` adds
   `ModelInfo` fields nearby. New startup or register-table code should use `I2CRegValue` / `write_registers()`.
-- #20864 (uses `status_comm_result` in tas58xx `update()`), stacked on #20863 (merged).
-- #20912 adds `final_validate.get_declaring_config()`; #20913 uses it in tas58xx `binary_sensor.py`. Our EQ
-  final validation should use it instead of the hand-written parent config lookup once merged.
+- #20913 uses `get_declaring_config()` (#20912, merged) in tas58xx `binary_sensor.py`; not merged yet. Our EQ final
+  validation can already use `get_declaring_config()` instead of the hand-written parent config lookup.
 
 ## Up to b3f5789dc6 (since the 2026.10 beta, reviewed 2026-10-17)
 - #20319 [tas58xx] TAS5805M `0x53=0x60`, TAS5825M GPIO1 as FAULTZ, startup comments. Baseline for the model files.
@@ -69,3 +68,24 @@ Watched PRs #20864, #20912, #20913 have not merged yet; they stay under 'Watchin
   `progmem_string_table_find()` (core helper, no tas58xx use today), #21016 `encode_uint24`, #20939 little-endian I2C
   helpers, #21015 `cv.uint8_t` / `cv.uint16_t` (could replace `cv.int_range` over a full byte range in new
   validators; optional).
+
+## dd456ea0b2..65ba64b9a6 (reviewed 2026-10-19, routine)
+Merged since the last review: #20864 and #20912, so both leave 'Watching'. #21083 and #20913 are still open.
+- #20864 [components] `TAS58xx::update()` now uses `status_comm_result(this->read_faults_() &&
+  this->read_byte(TAS58XX_POWER_STATE, &power_state), LOG_STR("Failed to read status"))`; `power_state` starts at 0.
+  - (a) No behaviour change. (c) Conflict only if a waiting branch edits `update()`: `add_fault_output` may, when it
+    reads the fault pin in `update()`. Take the `status_comm_result` form. (d) Use it for any new I2C failure path.
+- #20912 [core] `final_validate.get_declaring_config(id_, config=None)` returns the config block that declares an id
+  (KeyError if undeclared, TypeError if not a dict). (b) EQ final validation should use it in place of
+  `get_path_for_id()` plus `get_config_for_path()`. (c) Our `binary_sensor.py` still has the hand-written lookup
+  until #20913 merges; it is the same code the branches touch, so expect a small conflict there.
+- #20935 [core] Apply entities: `sub_numbers` / `sub_switches` / `sub_selects` / `sub_buttons` accept `apply=` (a C++
+  statement run on the hub, with `entity` plus `value` / `state` / `index` / `option` available) and `publish=`
+  ("before" or "after"), and then use a class-free `ApplyNumber` / `ApplySwitch` / `ApplySelect` / `ApplyButton`.
+  The entity needs `parent=` set (a hub). (a) tas58xx has no number, select or switch today, so nothing changes.
+  (b) The planned EQ entities (gain numbers, mode select, EQ switch) fit this shape when they only forward to the
+  hub; this would remove the per-entity C++ classes. (c) `add_mixer_select` and `add_channel_volume` could use it
+  too, but it is optional. (d) Prefer `apply=` over a new entity class when the entity only calls one hub method.
+- #21129 [const] `CONF_SOURCES` moved to `components/const`. No effect.
+- Checked, not relevant: #20866 shared expander pin class and pin helpers, #20925 `SensorWithDedup`, #21052 Python
+  3.15, #21137 and other dependency bumps, and the display, ld24xx, usb_audio, globals, web_server and api merges.
