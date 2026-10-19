@@ -142,6 +142,30 @@ C++ form at 0.5 dB ripple, fs 96000:
   coefficient 2). PPC3 does not let a coefficient wrap: at 20 Hz +20 dB it exported b0 = b2 = 8.0, b1 = -16 (0x80000001),
   the same 1 : -2 : 1 shape scaled to fit, so the gain becomes about +18.5 dB, not +20. Cap Chebyshev high pass at +18 dB.
 
+### Effect of the ripple, and why 0.5 dB (2026-10-19)
+
+A 2nd order Chebyshev is one pole pair, so the ripple acts like a Q setting (analog prototype; the frequency is the
+ripple band edge):
+
+| Ripple | Equivalent Q | Near the cutoff | -3 dB point (low pass; high pass f / x) |
+|---|---|---|---|
+| 0 (Butterworth) | 0.707 | flat | 1.00 x f |
+| 0.1 dB | 0.77 | almost Butterworth | 1.94 x f |
+| **0.5 dB** | **0.86** | 0.5 dB bump, slightly sharper knee | **1.39 x f** |
+| 1 dB | 0.96 | 1 dB bump | 1.22 x f |
+| 3 dB | 1.31 | 3 dB hump, boomy / ringing | 1.00 x f |
+
+- Far from the cutoff every ripple gives 12 dB per octave; more ripple only sharpens the knee, with a bigger bump,
+  more overshoot and ringing.
+- **PPC3's default ripple is 1.0 dB**, not 0.5 (each Chebyshev filter has to be changed to 0.5 by hand when exporting).
+  So sonocotta chose 0.5 dB for the main presets on purpose, and the +1 dB shelf makes up the 2 x 0.5 dB loss.
+- Guidance found: MathWorks' standard Chebyshev I example uses 0.5 dB; TI filter notes use 0.2 to 0.5 dB examples;
+  all say more ripple means a steeper transition but more overshoot and ringing, and TI notes crossovers favour low
+  overshoot. (The DSP Guide's "0.5%" is per cent, about 0.04 dB.)
+- Decision: fixed at 0.5 dB for now (`CHEBYSHEV_RIPPLE_DB` in `dev_update_eq_proto`). If a `ripple:` option is ever
+  added, 0.1 to 1.0 dB is the sensible range (this replaces the 0.1 to 3.0 suggested above); above 1 dB the bump
+  sounds like a deliberate boost.
+
 ## Proposal
 
 - **YAML** (EQ band, as the other `eq_filter` values): `low_pass_chebyshev`, `high_pass_chebyshev`.
