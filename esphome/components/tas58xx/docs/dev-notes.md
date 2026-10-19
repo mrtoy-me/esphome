@@ -682,9 +682,13 @@ Checked against esphome/tas58xx dev (2026-10-19):
     reserved. PPC3's 0x86 is EQ on, ganged, DRC and FIR bypassed, plus reserved bit 7.
   - Without EQ the reset value (EQ on, ganged, coefficient RAM at its defaults) is fine, so the startup sequence
     needs no write. EQ code must write it: `dev_update_eq_proto` writes 0x06 | bypass EQ | unique coefficients
-    (`TAS5805M_DSP_MISC`), the same as PPC3 except bit 7. Open: whether bit 7 matters (reserved in the datasheet).
+    (`TAS5805M_DSP_MISC`), the same as PPC3 except bit 7. Decided 2026-10-19: no documentation for bit 7, so do
+    what PPC3 does (as for 0x46): upstream EQ writes `0x86 | bypass | unique` (in TAS58XX_TODO.md).
   - TAS5825M has no DSP_MISC: its 0x66 is GPIO_OUT_INV (GPIO output invert), so 0x86 must never be written there.
     Its EQ gang and bypass flags are in DSP memory (book 0x8C page 0x0B, below), which the TAS5825M export writes.
+  - TAS5825M DRC and FIR: no bypass register. The 2 Band DRC & AGL export makes them transparent with settings
+    instead: DRC ratio 1 in all regions, band 1 mixer gain 1 and band 2 gain 0, AGL off, THD clipper 0 dB. The
+    export writes no FIR coefficients. The startup sequence leaves these at their reset defaults.
 - TAS5825M: matches (7D 11, 7E FF, page 1 51 05, page 2 1D 00 and 19 80, page 0 46 11, 53 01, 03 02). 02 and 54 are
   written by init_() from YAML, as the comment says. Our 03 00 first and 62 0B / 60 02 / 77 07 are additions. The
   PPC3 "Register Tuning" tail (62 09, 4C 30, 03 03, 78 80 and so on) is PPC3 tuning, not startup.

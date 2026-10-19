@@ -53,3 +53,7 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
 - When rebasing add_fault_output (and any branch editing the end of `to_code()` in `audio_dac.py`), use
   `await cg.add_pin(var.set_enable_pin, config.get(CONF_ENABLE_PIN))` as in dev (#21019), and use `cg.add_pin` for the
   new fault pin too (routine 2026-10-18).
+- TAS5805M DSP_MISC (0x66), decided 2026-10-19: do what PPC3 does, as for register 0x46. The EQ code writes
+  0x86 (reserved bit 7, DRC and FIR bypassed, EQ on, ganged) with bit 0 for EQ bypass and bit 3 for unique left and
+  right coefficients, ie `0x86 | bypass | unique`. `dev_update_eq_proto` writes 0x06 (no bit 7); it stays as is (frozen).
+  Never write 0x66 on the TAS5825M (it is GPIO_OUT_INV there). Details in dev-notes.md, "PPC3 audio modes".
