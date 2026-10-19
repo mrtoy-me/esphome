@@ -44,6 +44,10 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
   version in the style of the biquad helpers, compare its complexity and cost with Butterworth 2, then either add it
   as another filter type or shelve it. A one-off cloud run on 2026-10-19 (midnight Brisbane) writes the study to
   `chebyshev-study.md` in this folder (added 2026-10-18).
+  - (2026-10-19) Added to `dev_update_eq_proto` as `FILTER_TYPE_LOW_PASS_CHEBYSHEV` / `FILTER_TYPE_HIGH_PASS_CHEBYSHEV`,
+    not yet called. `chebyshev_filter()` takes the ripple as an argument; `make_biquad()` passes the constant
+    `CHEBYSHEV_RIPPLE_DB` (0.5), so Q is fixed as for low and high pass. A YAML `ripple:` option later would pass a
+    value instead of the constant.
   - (routine 2026-10-19) Study done: `chebyshev-study.md`. Recommendation: include (similar cost to Butterworth 2; C++ matches
     the reference with 0 LSB and the main branch presets are Chebyshev 0.5 dB).
 - `FS_MON` (0x37) check: once audio starts, read the detected input sample rate and log a warning if it is not
