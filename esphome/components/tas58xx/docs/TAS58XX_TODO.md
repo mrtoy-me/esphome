@@ -48,6 +48,9 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
     not yet called. `chebyshev_filter()` takes the ripple as an argument; `make_biquad()` passes the constant
     `CHEBYSHEV_RIPPLE_DB` (0.5), so Q is fixed as for low and high pass. A YAML `ripple:` option later would pass a
     value instead of the constant.
+  - Gain limits are the same as the Butterworth filters: low pass -24 to +24 dB, high pass -24 to +18 dB (largest
+    coefficient 14.99 at 10 Hz, +18 dB). The C++ boot clamp already includes `FILTER_TYPE_HIGH_PASS_CHEBYSHEV`; when
+    the YAML names are added, put `high_pass_chebyshev` in `EQ_GAIN_LIMITED_FILTERS` in `audio_dac.py`.
   - (routine 2026-10-19) Study done: `chebyshev-study.md`. Recommendation: include (similar cost to Butterworth 2; C++ matches
     the reference with 0 LSB and the main branch presets are Chebyshev 0.5 dB).
 - `FS_MON` (0x37) check: once audio starts, read the detected input sample rate and log a warning if it is not
