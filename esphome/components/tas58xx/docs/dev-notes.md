@@ -668,14 +668,23 @@ add the docs entry to `esphome/esphome.io`.
 
 ## PPC3 audio modes used by the startup sequences (2026-10-19)
 The startup sequences in `model_tas5805m.cpp` and `model_tas5825m.cpp` come from these PPC3 process flows; PPC3
-exports for EQ checks must use the same mode:
+exports for EQ checks must use the same mode (both exports are in `docs/ppc3/`):
 - TAS5805M: **2.0 96k 3 Band DRC** (`tas5805m_ppc3_chebyshev_2p0_96k_3band_drc.cfg`)
 - TAS5825M: **2.0 96k 2 Band DRC & AGL** (`tas5825m_ppc3_chebyshev_2p0_96k_2band_DRC-AGL_.cfg`)
 
 Checked against esphome/tas58xx dev (2026-10-19):
 - TAS5805M: the PPC3 header after the reset (03 00, 46 01, 03 02, 61 0B, 60 01, 7D 11, 7E FF, page 1 51 05, page 0)
-  matches `STARTUP_SEQUENCE` exactly; 53 60 is our addition. PPC3 also writes 0x66 = 0x86 (EQReg, DSP_MISC) before
-  the coefficients; the startup sequence does not.
+  matches `STARTUP_SEQUENCE` exactly; 53 60 is our addition. PPC3 also writes 0x66 = 0x86 (EQReg) before the
+  coefficients; the startup sequence does not.
+- Register 0x66 (datasheets checked 2026-10-19):
+  - TAS5805M DSP_MISC, reset 0x00. Bit 0 bypass EQ, bit 1 bypass DRC (L/R channel DRC only), bit 2 bypass the
+    128 tap FIR, bit 3 unique left and right coefficients (0: right shares the left coefficients, ganged), bits 7-4
+    reserved. PPC3's 0x86 is EQ on, ganged, DRC and FIR bypassed, plus reserved bit 7.
+  - Without EQ the reset value (EQ on, ganged, coefficient RAM at its defaults) is fine, so the startup sequence
+    needs no write. EQ code must write it: `dev_update_eq_proto` writes 0x06 | bypass EQ | unique coefficients
+    (`TAS5805M_DSP_MISC`), the same as PPC3 except bit 7. Open: whether bit 7 matters (reserved in the datasheet).
+  - TAS5825M has no DSP_MISC: its 0x66 is GPIO_OUT_INV (GPIO output invert), so 0x86 must never be written there.
+    Its EQ gang and bypass flags are in DSP memory (book 0x8C page 0x0B, below), which the TAS5825M export writes.
 - TAS5825M: matches (7D 11, 7E FF, page 1 51 05, page 2 1D 00 and 19 80, page 0 46 11, 53 01, 03 02). 02 and 54 are
   written by init_() from YAML, as the comment says. Our 03 00 first and 62 0B / 60 02 / 77 07 are additions. The
   PPC3 "Register Tuning" tail (62 09, 4C 30, 03 03, 78 80 and so on) is PPC3 tuning, not startup.
