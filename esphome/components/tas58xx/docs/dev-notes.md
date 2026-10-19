@@ -666,6 +666,28 @@ add the docs entry to `esphome/esphome.io`.
 - The ESP32 vs PPC spreadsheet (`ESP32_vs_PPC_Fixed527_Differences.xlsx`) is not in the repository; the PPC cfg is
   (`docs/tools/ppc_check/ppc_reference.cfg`).
 
+## PPC3 audio modes used by the startup sequences (2026-10-19)
+The startup sequences in `model_tas5805m.cpp` and `model_tas5825m.cpp` come from these PPC3 process flows; PPC3
+exports for EQ checks must use the same mode:
+- TAS5805M: **2.0 96k 3 Band DRC** (`tas5805m_ppc3_chebyshev_2p0_96k_3band_drc.cfg`)
+- TAS5825M: **2.0 96k 2 Band DRC & AGL** (`tas5825m_ppc3_chebyshev_2p0_96k_2band_DRC-AGL_.cfg`)
+
+Checked against esphome/tas58xx dev (2026-10-19):
+- TAS5805M: the PPC3 header after the reset (03 00, 46 01, 03 02, 61 0B, 60 01, 7D 11, 7E FF, page 1 51 05, page 0)
+  matches `STARTUP_SEQUENCE` exactly; 53 60 is our addition. PPC3 also writes 0x66 = 0x86 (EQReg, DSP_MISC) before
+  the coefficients; the startup sequence does not.
+- TAS5825M: matches (7D 11, 7E FF, page 1 51 05, page 2 1D 00 and 19 80, page 0 46 11, 53 01, 03 02). 02 and 54 are
+  written by init_() from YAML, as the comment says. Our 03 00 first and 62 0B / 60 02 / 77 07 are additions. The
+  PPC3 "Register Tuning" tail (62 09, 4C 30, 03 03, 78 80 and so on) is PPC3 tuning, not startup.
+- 0x46: 0x01 on TAS5805M, 0x11 on TAS5825M (96k flow), as in the register 0x46 notes.
+- Biquad addresses (book 0xAA, 15 per channel, 20 bytes each, Left then Right, contiguous): TAS5825M BQ1 Left is page
+  0x01 register 0x30 and BQ1 Right page 0x03 register 0x6C; TAS5805M BQ1 Left page 0x24 register 0x18 and BQ1 Right
+  page 0x26 register 0x54. Both match the `EQ_FIRST_BIQUAD` addressing in `dev_update_eq_proto`.
+- TAS5825M EQ gang and bypass flags: book 0x8C page 0x0B registers 0x28 and 0x2C, value 0x01000000 for true; matches
+  `TAS5825M_GANG_EQ` in `dev_update_eq_proto`.
+- Chebyshev coefficients from both exports match the C++ form within 1 LSB at 0.5 dB ripple; details in
+  `chebyshev-study.md`.
+
 ## Open items for next time (2026-10-14)
 - Hardware test the checklist above on `dev_update_with_onaudio_plus_eq` (pushed). If it passes,
   decide whether to merge it into `dev_update_with_onaudio`.

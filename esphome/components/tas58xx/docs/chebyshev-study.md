@@ -128,6 +128,20 @@ changes (preset: one call for the two identical biquads), so this does not matte
   switch the presets to Chebyshev 0.5 dB (matches main and the README), or keep Butterworth and fix the README and
   the shelf gain.
 
+### Against PPC3 exports (2026-10-19)
+
+Exports from the startup sequence modes (see dev-notes.md, "PPC3 audio modes"), checked with the PPC3 maths and the
+C++ form at 0.5 dB ripple, fs 96000:
+- TAS5805M, 2.0 96k 3 Band DRC: 14 biquads, high and low pass at 30, 350, 700, 1000, 3000, 6000 and 12000 Hz,
+  gains -24 to +18 dB. All fit 0.5 dB best; 10 exact, 4 within 1 LSB.
+- TAS5825M, 2.0 96k 2 Band DRC & AGL: high pass 10 Hz +18 dB (largest coefficient 14.99, within 1 LSB), low pass
+  20 Hz +18 dB, high and low pass 20 Hz -24 dB (exact). Same coefficients as the TAS5805M would give: same 96 kHz
+  flow and 5.27 format.
+- Gain limit: the high pass is the limit and gets worse as the frequency drops (14.99 at 10 Hz, +18 dB); +19 dB
+  overflows below about 1 kHz. A low pass only overflows above about 44 kHz at +19 dB. A cut never matters (largest
+  coefficient 2). PPC3 does not let a coefficient wrap: at 20 Hz +20 dB it exported b0 = b2 = 8.0, b1 = -16 (0x80000001),
+  the same 1 : -2 : 1 shape scaled to fit, so the gain becomes about +18.5 dB, not +20. Cap Chebyshev high pass at +18 dB.
+
 ## Proposal
 
 - **YAML** (EQ band, as the other `eq_filter` values): `low_pass_chebyshev`, `high_pass_chebyshev`.
