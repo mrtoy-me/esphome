@@ -7,7 +7,7 @@ Reviews of `esphome/esphome` `dev` merges that affect ESPHome's own tas58xx, the
 `add_mixer_select` and `add_channel_volume` (all in `mrtoy-me/esphome`). Updated daily by a scheduled routine and in
 interactive sessions; newest section at the bottom.
 
-Last reviewed dev commit: 65ba64b9a6
+Last reviewed dev commit: bac4d2aa2c
 
 ## Watching (open PRs that change tas58xx)
 - #21083 (bdraco, open 2026-10-19): the startup sequences in `model_tas5805m.cpp` / `model_tas5825m.cpp` become
@@ -89,3 +89,22 @@ Merged since the last review: #20864 and #20912, so both leave 'Watching'. #2108
 - #21129 [const] `CONF_SOURCES` moved to `components/const`. No effect.
 - Checked, not relevant: #20866 shared expander pin class and pin helpers, #20925 `SensorWithDedup`, #21052 Python
   3.15, #21137 and other dependency bumps, and the display, ld24xx, usb_audio, globals, web_server and api merges.
+
+## 65ba64b9a6..bac4d2aa2c (reviewed 2026-10-20, routine)
+No tas58xx files changed. #21083 and #20913 are not merged yet; they stay under 'Watching'.
+- #21180 [core] new `cg.add_optional(setter, value)`: calls the setter with the value and returns it; does nothing for
+  `None`. #21181 / #21183 apply it across components (the only file of interest is `i2c/__init__.py`, pullup options;
+  tas58xx is not touched). (a) No change. (c) No conflict expected. (d) New tas58xx code that sets an optional plain
+  config value should use `cg.add_optional(var.set_x, config.get(CONF_X))` instead of an `if CONF_X in config` block
+  (for example the fault output, modulation or channel volume options). Pins still use `cg.add_pin`.
+- #21130 [core] AGENTS.md now lists the codegen and bus helpers (`update_register`, `write_registers`, `check_chip_id`,
+  `status_comm_result`, `get_declaring_config`, `MyEnum.options`, `new_i2c_component`) and the Apply entities
+  (`apply=`, `publish="before"` or `"after"`). (b) This supports the EQ plan: use Apply entities for EQ numbers,
+  selects and switches that only call the hub. No new action beyond the existing to-do items.
+- #21146, #21147, #21148, #21162, #21163 (ld2420, ld2450, dfrobot_sen0609, airton, haier_tundra, tm1638, bl0940,
+  micronova, atm90e32, copy) now use Apply numbers, selects, switches and buttons. They are working in-tree examples
+  of the `apply=` form for the planned EQ entities.
+- Checked, not relevant: #21176 flake8 replaced by ruff docstring rules (Python docstrings in new tas58xx Python may
+  be checked by ruff), #21117 / #21118 core logging from flash, #21152 / #21150 and other test helpers, IR frame byte
+  helpers (remote_base and climate IR merges), #21202 sx126x, #21174 sx126x / sx127x constant, #17744 nextion,
+  #21145 ld2410, #15608 st25r, #21172 st7305, #21178 ota, dependency bumps.
