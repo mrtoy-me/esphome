@@ -7,7 +7,7 @@ Reviews of `esphome/esphome` `dev` merges that affect ESPHome's own tas58xx, the
 `add_mixer_select` and `add_channel_volume` (all in `mrtoy-me/esphome`). Updated daily by a scheduled routine and in
 interactive sessions; newest section at the bottom.
 
-Last reviewed dev commit: bac4d2aa2c
+Last reviewed dev commit: 62c9e05541
 
 ## Watching (open PRs that change tas58xx)
 - #21083 (bdraco, open 2026-10-19): the startup sequences in `model_tas5805m.cpp` / `model_tas5825m.cpp` become
@@ -108,3 +108,20 @@ No tas58xx files changed. #21083 and #20913 are not merged yet; they stay under 
   be checked by ruff), #21117 / #21118 core logging from flash, #21152 / #21150 and other test helpers, IR frame byte
   helpers (remote_base and climate IR merges), #21202 sx126x, #21174 sx126x / sx127x constant, #17744 nextion,
   #21145 ld2410, #15608 st25r, #21172 st7305, #21178 ota, dependency bumps.
+
+## bac4d2aa2c..62c9e05541 (reviewed 2026-10-21, routine)
+No tas58xx files changed. #21083 and #20913 are not merged yet; they stay under 'Watching'.
+- #21234 [core] new validators `cv.only_when(keys, selector, values, negate=, hint=)` and `cv.key_requires(keys,
+  *required, any_of=, hint=)`; place them after the schema in `cv.All`. #21236 applies them across components.
+  (a) No change. (c) No conflict expected. (d) For "this key only valid when that key is set to X" or "this key needs
+  that key" checks in new tas58xx Python (for example a fault output or channel volume option that depends on another
+  key), use these instead of a hand-written validator. Prefer `cv.typed_schema` when most of the schema depends on the
+  selector.
+- #21116 [core] `log_entity_header(tag, prefix, type, obj)` in `entity_base.h` now builds the entity `dump_config`
+  header (used by `log_number`, select and others). (b) EQ numbers and selects log through the existing `LOG_NUMBER` /
+  `LOG_SELECT` macros, so nothing to do.
+- #21002 / #21203 [speaker] announcement volume and stack-built task names. Not related to the DAC; no effect.
+- Checked, not relevant: clang-format bump to 22.1.8 (#20551; C++ in new tas58xx code is checked with the new version,
+  run `clang-format` before a PR), #21127 esp32_ulp, #20213 / #20214 climate and fan ConstVector, #14318 mqtt TLS,
+  #14526 IPV4 option, #20893 i2s_audio slot width, ConstVector/"stop copying" string clean-ups, pca9554, vl53l1x,
+  epaper_spi, test helper changes, dependency bumps, release/beta merges.
