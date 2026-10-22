@@ -7,7 +7,7 @@ Reviews of `esphome/esphome` `dev` merges that affect ESPHome's own tas58xx, the
 `add_mixer_select` and `add_channel_volume` (all in `mrtoy-me/esphome`). Updated daily by a scheduled routine and in
 interactive sessions; newest section at the bottom.
 
-Last reviewed dev commit: 62c9e05541
+Last reviewed dev commit: 59c7178910
 
 ## Watching (open PRs that change tas58xx)
 - #21083 (bdraco, open 2026-10-19): the startup sequences in `model_tas5805m.cpp` / `model_tas5825m.cpp` become
@@ -125,3 +125,21 @@ No tas58xx files changed. #21083 and #20913 are not merged yet; they stay under 
   run `clang-format` before a PR), #21127 esp32_ulp, #20213 / #20214 climate and fan ConstVector, #14318 mqtt TLS,
   #14526 IPV4 option, #20893 i2s_audio slot width, ConstVector/"stop copying" string clean-ups, pca9554, vl53l1x,
   epaper_spi, test helper changes, dependency bumps, release/beta merges.
+
+## 62c9e05541..59c7178910 (reviewed 2026-10-22, routine)
+No tas58xx files changed. #21083 and #20913 are not merged yet; they stay under 'Watching'.
+- #21184 [core] `assign_bits(value, mask, on)` in `helpers.h` sets or clears the bits of `mask` in a register value from a
+  bool. (a) No change. (b)/(d) Use it in new tas58xx code that sets or clears a register bit from a bool (for example
+  a fault-output or modulation bit) instead of an `if/else` with `|=` and `&= ~`. Use an unsigned mask.
+- #21262 / #21157 / #21158 / #21263 [core] `ApplyBytes` and Apply entities that run a free statement without a parent
+  hub. (a) No change. (d) Relevant if a new tas58xx action only forwards a byte payload or value to the component:
+  register it with `register_apply_action` instead of writing a C++ action class.
+- #20423 / #20615 / #21111 [core] Entity names are kept in flash on ESP8266. `EntityBase::get_name()` is deprecated
+  (removal in 2027.5.0); use `get_name_to(buffer)` or `get_log_name()` (`LOG_STR_ARG`) instead. (a) tas58xx does not
+  call `get_name()`, so no change. (b) EQ number and select code must not call `get_name()` either. No conflict
+  expected for waiting branches.
+- #21307 [core] Generated lambda code is emitted after the user includes. No effect on tas58xx.
+- Checked, not relevant: #19962 api media_player constant bitrate (no `audio_dac` or `speaker` file changed), clang-tidy
+  and clang-format 23.1.3 bump (#21296, #21301, #21334, #21336: run `clang-format` and fix findings before a PR),
+  #21329 / #21325 / #21324 shared `CONF_` constants moves, #21232 sub-device relation, wifi, mqtt, cover, esp32_hosted,
+  vnc, light, sensor, dependency bumps.
