@@ -73,3 +73,5 @@ The EQ control proposal is `TAS58xx_EQ_Control_Proposal_v1.docx` and the notes a
   `get_path_for_id()` (routine 2026-10-19).
 - Check whether the EQ number, select and switch entities can use the Apply entities (#20935: `apply=` / `publish=`
   on `sub_numbers` etc., no per-entity class) before writing entity classes (routine 2026-10-19).
+- Use `final_validate.platform_entries()` / `unique_platform_key()` (#21462, merged) in the EQ final validation where it
+  needs the platform's entries or one-entry-per-key checks (routine 2026-10-23).

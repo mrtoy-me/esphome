@@ -7,7 +7,7 @@ Reviews of `esphome/esphome` `dev` merges that affect ESPHome's own tas58xx, the
 `add_mixer_select` and `add_channel_volume` (all in `mrtoy-me/esphome`). Updated daily by a scheduled routine and in
 interactive sessions; newest section at the bottom.
 
-Last reviewed dev commit: 59c7178910
+Last reviewed dev commit: 2b024114cf
 
 ## Watching (open PRs that change tas58xx)
 - #21083 (bdraco, open 2026-10-19): the startup sequences in `model_tas5805m.cpp` / `model_tas5825m.cpp` become
@@ -143,3 +143,25 @@ No tas58xx files changed. #21083 and #20913 are not merged yet; they stay under 
   and clang-format 23.1.3 bump (#21296, #21301, #21334, #21336: run `clang-format` and fix findings before a PR),
   #21329 / #21325 / #21324 shared `CONF_` constants moves, #21232 sub-device relation, wifi, mqtt, cover, esp32_hosted,
   vnc, light, sensor, dependency bumps.
+
+## 59c7178910..2b024114cf (reviewed 2026-10-23, routine)
+No tas58xx files changed. #21083 and #20913 are not merged yet; they stay under 'Watching'.
+- #21462 [core] `final_validate.platform_entries(domain=, platform=, match=)` and `unique_platform_key(domain=,
+  platform=, keys=, message=)`. (a) No change. (b)/(d) The EQ final validation can use `platform_entries` to find the
+  platform's number, select or switch entries, and `unique_platform_key` for "one entry per DAC" style checks, instead
+  of walking the full config by hand. Used together with `get_declaring_config()`. #21465 converts other components
+  to them (examples: `tmp102`, `lp5562`, `usb_audio`).
+- #20978 [switch] New `restore_state` (`state: KEEP | INVERT | none`, `storage: flash | rtc`) and `initial_state`
+  options; `restore_mode` still works but cannot be combined with them. New `Switch::restore()` /
+  `restore(bool when_disabled)` drive the switch through `control()` from the restore mode. (a) No change. (b) The
+  planned `eq_mode` switch (`RESTORE_DEFAULT_ON`, step 6 of the plan) keeps working with `restore_mode`; a new switch
+  platform can use `switch.switch_schema(..., default_restore_mode="RESTORE_DEFAULT_ON")` as before. If the switch is
+  an Apply switch (#20935), check how it restores its state against `Switch::restore()` before writing code. (c) No
+  conflict expected.
+- #21185 / #21187 [components] More `assign_bits` conversions (es8156, es8311, es8388 and others). Confirms the
+  pattern from #21184; no tas58xx file touched.
+- #21443 [core] `constant_time_equals(a, b, len)` in `helpers.h` (security use only). Not relevant to tas58xx.
+- Checked, not relevant: #21415 / #21422 ESP-IDF version gates, #21317 library dependency resolution, #21438 / #21439 /
+  #21306 / #21305 integration test helpers, #21414 hardware-test skill, #18337 binary_sensor imports, #21339 / #21343 /
+  #21344 traits packing, #21428 `Switch::restore()` use in components, many new components and component fixes
+  (duco, packet_interface, max170xx, ds3231, weikai, vnc, online_image, spi, usb_uart, light, ota), dependency bumps.
