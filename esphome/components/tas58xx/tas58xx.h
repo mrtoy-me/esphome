@@ -128,6 +128,10 @@ class TAS58xx : public audio_dac::AudioDac, public PollingComponent, public i2c:
   void set_volume_min_db(float volume_min_db) { this->volume_min_db_ = volume_min_db; }
   void set_volume_max_db(float volume_max_db) { this->volume_max_db_ = volume_max_db; }
 
+  MixerMode get_mixer_mode() const { return this->mixer_mode_; }
+  /// Change the input mixer at runtime. It is written now if the device is playing, otherwise when audio starts.
+  void apply_mixer_mode(MixerMode mixer_mode);
+
 #ifdef USE_BINARY_SENSOR
   SUB_BINARY_SENSOR(have_fault)
   void set_fault_binary_sensor(FaultSensor fault, binary_sensor::BinarySensor *sensor) {
@@ -143,6 +147,10 @@ class TAS58xx : public audio_dac::AudioDac, public PollingComponent, public i2c:
   bool write_volume_();
   bool write_mixer_();
   bool read_faults_();
+  /// Read POWER_STATE, masked to the device state; false if the read failed
+  bool read_power_state_(uint8_t &power_state);
+  /// Write the DSP settings not written since the last reset; call only while the DSP is writable
+  void write_dsp_();
 
   const ModelInfo *model_;
   GPIOPin *enable_pin_{nullptr};
@@ -158,7 +166,7 @@ class TAS58xx : public audio_dac::AudioDac, public PollingComponent, public i2c:
   MixerMode mixer_mode_{MIXER_MODE_STEREO};
   uint8_t ctrl_state_{0};
   uint8_t power_state_{0xFF};  // Last POWER_STATE seen by update(), 0xFF until the first read
-  bool mixer_written_{false};  // Mixer written since the last reset
+  bool mixer_written_{false};  // Mixer written since the last reset; false while pending, see write_dsp_()
 };
 
 }  // namespace esphome::tas58xx
