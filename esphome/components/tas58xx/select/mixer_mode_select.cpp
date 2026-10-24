@@ -13,6 +13,8 @@ void MixerModeSelect::setup() {
   this->parent_->apply_mixer_mode(static_cast<MixerMode>(mode));
 }
 
+void MixerModeSelect::dump_config() { LOG_SELECT("", "TAS58xx Mixer Mode", this); }
+
 void MixerModeSelect::control(size_t index) {
   const uint8_t mode = this->first_mode_ + index;
   this->publish_state(index);

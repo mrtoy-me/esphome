@@ -15,6 +15,7 @@ class MixerModeSelect final : public select::Select, public Component, public Pa
   MixerModeSelect(MixerMode first_mode) : first_mode_(first_mode) {}
 
   void setup() override;
+  void dump_config() override;
 
  protected:
   void control(size_t index) override;
