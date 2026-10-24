@@ -12,7 +12,7 @@ namespace esphome::tas58xx {
 /// left and right for PBTL. With restore_value the selected mode is restored after a reboot.
 class MixerModeSelect final : public select::Select, public Component, public Parented<TAS58xx> {
  public:
-  MixerModeSelect(MixerMode first_mode, bool restore_value) : first_mode_(first_mode) {}
+  MixerModeSelect(MixerMode first_mode) : first_mode_(first_mode) {}
 
   void setup() override;
 
