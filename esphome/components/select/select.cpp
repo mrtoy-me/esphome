@@ -8,6 +8,14 @@ namespace esphome::select {
 
 ESPHOME_LOG_TAG(TAG, "select");
 
+// Function implementation of LOG_SELECT macro to reduce code size
+void log_select(const char *tag, const char *prefix, const char *type, Select *obj) {
+  if (!log_entity_header(tag, prefix, type, obj)) {
+    return;
+  }
+  LOG_ENTITY_DEVICE_CLASS(tag, prefix, *obj);
+}
+
 void Select::publish_state(const char *state) {
   auto index = this->index_of(state);
   if (index.has_value()) {

@@ -9,10 +9,13 @@
 
 namespace esphome::select {
 
-#define LOG_SELECT(prefix, type, obj) \
-  if (log_entity_header(TAG, prefix, LOG_STR_LITERAL(type), (obj))) { \
-    LOG_ENTITY_ICON(TAG, prefix, *(obj)); \
-  }
+// #define LOG_SELECT(prefix, type, obj) \
+//   if (log_entity_header(TAG, prefix, LOG_STR_LITERAL(type), (obj))) { \
+//     LOG_ENTITY_ICON(TAG, prefix, *(obj)); \
+//   }
+
+#define LOG_SELECT(prefix, type, obj) log_select((TAG), (prefix), LOG_STR_LITERAL(type), (obj))
+void log_select(const char *tag, const char *prefix, const char *type, Select *obj);
 
 #define SUB_SELECT(name) \
  protected: \
@@ -110,6 +113,9 @@ class Select : public EntityBase {
 
   LazyCallbackManager<void(size_t)> state_callback_;
 };
+
+
+
 
 /// Calls the codegen-generated Fn(this, index) on a new index; the hub and any publish are baked into Fn.
 template<auto Fn> class ApplySelect final : public Select {
