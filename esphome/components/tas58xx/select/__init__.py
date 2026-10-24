@@ -31,23 +31,14 @@ MIXER_MODE_OPTIONS = {
 # PBTL drives a single speaker, so the stereo modes are not offered
 PBTL_MIXER_MODES = ("mono", "left", "right")
 
-CONFIG_SCHEMA = cv.Schema(
-    {
-        cv.GenerateID(CONF_TAS58XX_ID): cv.use_id(TAS58xx),
-        cv.Optional(CONF_MIXER_MODE): select.select_schema(
-            MixerModeSelect,
-            entity_category=ENTITY_CATEGORY_CONFIG,
-            icon=ICON_SPEAKER_MULTIPLE,
-        )
-        .extend(
-            {
-                # Off: every boot starts at the audio_dac mixer_mode. On: the last selected mode is restored
-                cv.Optional(CONF_RESTORE_VALUE, default=False): cv.boolean,
-            }
-        )
-        .extend(cv.COMPONENT_SCHEMA),
-    }
-)
+CONFIG_SCHEMA = cv.Schema{
+    cv.GenerateID(CONF_TAS58XX_ID): cv.use_id(TAS58xx),
+    cv.Optional(CONF_MIXER_MODE): select.select_schema(
+        MixerModeSelect,
+        entity_category=ENTITY_CATEGORY_CONFIG,
+        icon=ICON_SPEAKER_MULTIPLE,
+    )
+}
 
 
 def _final_validate(config: ConfigType) -> ConfigType:
@@ -76,7 +67,6 @@ async def to_code(config: ConfigType) -> None:
             CONF_MIXER_MODE,
             None,
             MIXER_MODES[modes[0]],
-            mixer_config[CONF_RESTORE_VALUE],
             options=[MIXER_MODE_OPTIONS[mode] for mode in modes],
         )
         await cg.register_component(sel, mixer_config)

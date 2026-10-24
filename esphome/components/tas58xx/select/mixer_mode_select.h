@@ -3,7 +3,6 @@
 #include "esphome/components/select/select.h"
 #include "esphome/core/component.h"
 #include "esphome/core/helpers.h"
-#include "esphome/core/preferences.h"
 
 #include "../tas58xx.h"
 
@@ -13,17 +12,14 @@ namespace esphome::tas58xx {
 /// left and right for PBTL. With restore_value the selected mode is restored after a reboot.
 class MixerModeSelect final : public select::Select, public Component, public Parented<TAS58xx> {
  public:
-  MixerModeSelect(MixerMode first_mode, bool restore_value) : first_mode_(first_mode), restore_value_(restore_value) {}
+  MixerModeSelect(MixerMode first_mode, bool restore_value) : first_mode_(first_mode) {}
 
   void setup() override;
-  void dump_config() override;
 
  protected:
   void control(size_t index) override;
 
-  ESPPreferenceObject pref_;
   MixerMode first_mode_;
-  bool restore_value_;
 };
 
 }  // namespace esphome::tas58xx
