@@ -1,7 +1,7 @@
 import esphome.codegen as cg
 from esphome.components import select
 import esphome.config_validation as cv
-from esphome.const import CONF_ID, CONF_RESTORE_VALUE, ENTITY_CATEGORY_CONFIG
+from esphome.const import CONF_ID, ENTITY_CATEGORY_CONFIG
 from esphome.core import CORE
 import esphome.final_validate as fv
 from esphome.types import ConfigType
@@ -31,7 +31,7 @@ MIXER_MODE_OPTIONS = {
 # PBTL drives a single speaker, so the stereo modes are not offered
 PBTL_MIXER_MODES = ("mono", "left", "right")
 
-CONFIG_SCHEMA = cv.Schema{
+CONFIG_SCHEMA = {
     cv.GenerateID(CONF_TAS58XX_ID): cv.use_id(TAS58xx),
     cv.Optional(CONF_MIXER_MODE): select.select_schema(
         MixerModeSelect,
