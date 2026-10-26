@@ -30,6 +30,16 @@ enum MixerMode : uint8_t {
   MIXER_MODE_RIGHT,
 };
 
+enum Channel : uint8_t {
+  CHANNEL_LEFT = 0,
+  CHANNEL_RIGHT,
+  CHANNEL_COUNT,  // keep last
+};
+
+/// Channel volume range in dB, a gain in the DSP after the input mixer
+static constexpr float CHANNEL_VOLUME_MIN_DB = -24.0f;
+static constexpr float CHANNEL_VOLUME_MAX_DB = 24.0f;
+
 /// Fault binary sensors that map to a single fault bit. Note that ordering is important.
 /// The Python FAULT_SENSORS list in binary_sensor.py uses the same names and ordering.
 enum FaultSensor : uint8_t {
@@ -80,6 +90,10 @@ struct ModelInfo {
   uint8_t mixer_book;
   uint8_t mixer_page;
   uint8_t mixer_register;
+  /// Location of the two 9.23 fixed point channel volumes: LEFT, then RIGHT
+  uint8_t channel_volume_book;
+  uint8_t channel_volume_page;
+  uint8_t channel_volume_register;
   /// Faults logged as errors and reported by have_fault
   uint32_t fault_error_mask;
   /// Faults logged as warnings
@@ -131,6 +145,9 @@ class TAS58xx : public audio_dac::AudioDac, public PollingComponent, public i2c:
   void set_volume_min_db(float volume_min_db) { this->volume_min_db_ = volume_min_db; }
   void set_volume_max_db(float volume_max_db) { this->volume_max_db_ = volume_max_db; }
 
+  /// Set a channel volume in dB at runtime. It is written now if the device is playing, otherwise when audio starts.
+  void set_channel_volume(Channel channel, float volume_db);
+
 #ifdef USE_BINARY_SENSOR
   SUB_BINARY_SENSOR(have_fault)
   void set_fault_binary_sensor(FaultSensor fault, binary_sensor::BinarySensor *sensor) {
@@ -158,6 +175,8 @@ class TAS58xx : public audio_dac::AudioDac, public PollingComponent, public i2c:
   bool set_mute_(bool muted);
   bool write_volume_();
   bool write_mixer_();
+  bool write_channel_volumes_();
+  void write_pending_dsp_();
   bool read_faults_();
 
   const ModelInfo *model_;
@@ -174,7 +193,11 @@ class TAS58xx : public audio_dac::AudioDac, public PollingComponent, public i2c:
   MixerMode mixer_mode_{MIXER_MODE_STEREO};
   uint8_t ctrl_state_{0};
   uint8_t power_state_{0xFF};  // Last POWER_STATE seen by update(), 0xFF until the first read
+  std::array<float, CHANNEL_COUNT> channel_volume_db_{};
   bool mixer_written_{false};  // Mixer written since the last reset
+  // Channel volumes are only written once set, so a device without channel volume numbers keeps the DSP defaults
+  bool channel_volumes_set_{false};
+  bool channel_volumes_written_{true};  // Channel volumes written since the last reset or change
 };
 
 }  // namespace esphome::tas58xx
