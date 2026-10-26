@@ -20,6 +20,7 @@ static constexpr uint8_t TAS58XX_RESET_CTRL = 0x01;
 static constexpr uint8_t TAS58XX_RESET_CTRL_ALL = 0x11;  // Reset DSP/control port and registers
 static constexpr uint8_t TAS58XX_DEVICE_CTRL_1 = 0x02;
 static constexpr uint8_t TAS58XX_DEVICE_CTRL_1_PBTL = (1 << 2);
+static constexpr uint8_t TAS58XX_DEVICE_CTRL_1_DAMP_MOD_MASK = 0x03;
 static constexpr uint8_t TAS58XX_DEVICE_CTRL_2 = 0x03;
 static constexpr uint8_t TAS58XX_DEVICE_CTRL_2_MUTE = (1 << 3);
 static constexpr uint8_t TAS58XX_CTRL_STATE_MASK = 0x03;  // DEVICE_CTRL_2 and POWER_STATE
@@ -98,12 +99,13 @@ bool TAS58xx::init_() {
     return false;
   }
 
-  // Setters are public, so keep the value inside the register range
+  // Setters are public, so keep the values inside the register ranges
   const uint8_t again =
       static_cast<uint8_t>(lroundf(clamp(-this->analog_gain_db_ * 2.0f, 0.0f, float{TAS58XX_AGAIN_MINUS_15_5DB})));
-  if (!this->write_byte(TAS58XX_DEVICE_CTRL_1, this->dac_mode_ == DAC_MODE_PBTL ? TAS58XX_DEVICE_CTRL_1_PBTL : 0) ||
-      !this->write_byte(TAS58XX_AGAIN, again) || !this->write_volume_() ||
-      !this->write_ctrl_state_(TAS58XX_CTRL_STATE_PLAY, this->is_muted_) ||
+  const uint8_t device_ctrl_1 = (this->dac_mode_ == DAC_MODE_PBTL ? TAS58XX_DEVICE_CTRL_1_PBTL : 0) |
+                                (this->modulation_ & TAS58XX_DEVICE_CTRL_1_DAMP_MOD_MASK);
+  if (!this->write_byte(TAS58XX_DEVICE_CTRL_1, device_ctrl_1) || !this->write_byte(TAS58XX_AGAIN, again) ||
+      !this->write_volume_() || !this->write_ctrl_state_(TAS58XX_CTRL_STATE_PLAY, this->is_muted_) ||
       !this->write_byte(TAS58XX_FAULT_CLEAR, TAS58XX_FAULT_CLEAR_ANALOG)) {
     ESP_LOGE(TAG, "I2C write failed during init");
     return false;
@@ -273,10 +275,12 @@ void TAS58xx::dump_config() {
   ESP_LOGCONFIG(TAG,
                 "  Analog Gain: %.1f dB\n"
                 "  DAC Mode: %s\n"
+                "  Modulation: %s\n"
                 "  Mixer Mode: %s\n"
                 "  Volume Range: %.1f dB to %.1f dB",
                 this->analog_gain_db_,
                 this->dac_mode_ == DAC_MODE_PBTL ? LOG_STR_LITERAL("PBTL") : LOG_STR_LITERAL("BTL"),
+                this->modulation_ == MODULATION_1SPW_MODE ? LOG_STR_LITERAL("1SPW") : LOG_STR_LITERAL("BD"),
                 LOG_STR_ARG(mixer_mode), this->volume_min_db_, this->volume_max_db_);
 #ifdef USE_BINARY_SENSOR
   LOG_BINARY_SENSOR("  ", "Any Fault", this->have_fault_binary_sensor_);
