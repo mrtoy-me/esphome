@@ -65,6 +65,26 @@ static_assert(
 /// ModelInfo::fault_sensor_bits value for a FaultSensor that the model does not have.
 static constexpr uint8_t NO_BIT = 0xFF;
 
+/// Pins that can report FAULTZ, used as the index into ModelInfo::fault_outputs. Note that ordering is important.
+/// Add new pins just before FAULT_OUTPUT_COUNT so that existing model tables keep their positions.
+/// The Python FAULT_OUTPUTS dict in audio_dac.py uses the same names.
+enum FaultOutput : uint8_t {
+  FAULT_OUTPUT_ADR,
+  FAULT_OUTPUT_GPIO0,
+  FAULT_OUTPUT_GPIO1,
+  FAULT_OUTPUT_GPIO2,
+  FAULT_OUTPUT_COUNT,        // keep after the pins
+  FAULT_OUTPUT_NONE = 0xFF,  // No register writes, the pin keeps its power on state
+};
+
+/// Registers of one fault output pin. A select_register of 0 means the model does not have that pin.
+struct FaultOutputInfo {
+  /// Register selecting the pin function, written with ModelInfo::fault_output_function
+  uint8_t select_register;
+  /// Output enable bit of the pin in ModelInfo::fault_output_ctrl_register
+  uint8_t output_mask;
+};
+
 /// Everything that differs between models of the family. One constant instance exists per model, see
 /// model_*.cpp, and each TAS58xx instance points to the one for its model.
 ///
@@ -91,6 +111,12 @@ struct ModelInfo {
   const LogString *(*fault_name)(uint8_t index);
   /// Bit index for each FaultSensor, NO_BIT used where the model does not have that fault bit
   uint8_t fault_sensor_bits[FAULT_SENSOR_COUNT];
+  /// Register holding the output enable bit of every fault output pin
+  uint8_t fault_output_ctrl_register;
+  /// Value written to a fault output select_register to report FAULTZ on that pin
+  uint8_t fault_output_function;
+  /// Registers of each FaultOutput, zero filled where the model does not have that pin
+  FaultOutputInfo fault_outputs[FAULT_OUTPUT_COUNT];
 };
 
 #ifdef USE_TAS58XX_TAS5805M
@@ -127,6 +153,7 @@ class TAS58xx : public audio_dac::AudioDac, public PollingComponent, public i2c:
   void set_enable_pin(GPIOPin *enable_pin) { this->enable_pin_ = enable_pin; }
   void set_analog_gain(float analog_gain_db) { this->analog_gain_db_ = analog_gain_db; }
   void set_dac_mode(DacMode dac_mode) { this->dac_mode_ = dac_mode; }
+  void set_fault_output(FaultOutput fault_output) { this->fault_output_ = fault_output; }
   void set_mixer_mode(MixerMode mixer_mode) { this->mixer_mode_ = mixer_mode; }
   void set_volume_min_db(float volume_min_db) { this->volume_min_db_ = volume_min_db; }
   void set_volume_max_db(float volume_max_db) { this->volume_max_db_ = volume_max_db; }
@@ -171,6 +198,7 @@ class TAS58xx : public audio_dac::AudioDac, public PollingComponent, public i2c:
   float volume_max_db_{24.0f};
   uint32_t logged_faults_{0};  // Fault bits as last logged, packed like the fault masks
   DacMode dac_mode_{DAC_MODE_BTL};
+  FaultOutput fault_output_{FAULT_OUTPUT_NONE};
   MixerMode mixer_mode_{MIXER_MODE_STEREO};
   uint8_t ctrl_state_{0};
   uint8_t power_state_{0xFF};  // Last POWER_STATE seen by update(), 0xFF until the first read

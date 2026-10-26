@@ -23,9 +23,6 @@ static constexpr i2c::I2CRegValue STARTUP_SEQUENCE[] PROGMEM = {
     {0x03, 0x02},  // DEVICE_CTRL_2: Hi-Z
 
     // Additional register configuration
-    // GPIO1 is a dedicated pin on TAS5825M (separate from ADR), used as FAULTZ
-    {0x62, 0x0B},  // GPIO1_SEL: GPIO1 as FAULTZ
-    {0x60, 0x02},  // GPIO_CTRL: GPIO1 is output
     {0x77, 0x07},  // CBC_CONTROL: enable cycle-by-cycle current limit for warnings and faults
 };
 
@@ -112,6 +109,15 @@ const ModelInfo TAS5825M_MODEL = {
             27,  // FAULT_SENSOR_OVER_TEMP_146C_WARNING
                  // 25,  // FAULT_SENSOR_OVER_TEMP_122C_WARNING // not currently included
                  // 24,  // FAULT_SENSOR_OVER_TEMP_112C_WARNING // not currently included
+        },
+    .fault_output_ctrl_register = 0x60,  // GPIO_CTRL
+    .fault_output_function = 0x0B,       // GPIOx_SEL: GPIOx as FAULTZ output
+    .fault_outputs =
+        {
+            {},            // FAULT_OUTPUT_ADR: ADR is an analog input only on TAS5825M
+            {0x61, 0x01},  // FAULT_OUTPUT_GPIO0: GPIO0_SEL, GPIO0_OE
+            {0x62, 0x02},  // FAULT_OUTPUT_GPIO1: GPIO1_SEL, GPIO1_OE
+            {0x63, 0x04},  // FAULT_OUTPUT_GPIO2: GPIO2_SEL, GPIO2_OE
         },
 };
 
